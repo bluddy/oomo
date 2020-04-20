@@ -207,7 +207,7 @@ type st_weapon = {
   nummiss: int; (* beam: streaming *)
 }
 
-let make_weapon name extra_text damage_min damage_max range
+let mk_weapon name extra_text damage_min damage_max range
     extra_acc halve_shield is_bomb damage_fade miss_type damage_mul
     numfire numshots cost space power is_bio tech_i v24
     dtbl sound nummiss =
@@ -222,21 +222,28 @@ type per_ship_hull = {
   cost: int;
 }
 
-type st_comp = {
+type shiptech_comp = {
   name: string;
   shiphull: per_ship_hull array; (* ship_hull_num *)
   tech_i: int;
   level: int;
 }
 
-type st_jammer = {
+let mk_comp name power_l space_l cost_l tech_i level =
+  let shiphull =
+    Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
+    |> Array.of_list
+  in
+  {name; tech_i; shiphull; level}
+
+type shiptech_jammer = {
   name: string;
   shiphull: per_ship_hull array; (* ship_hull_num *)
   tech_i: int;
   level: int;
 }
 
-type st_engine = {
+type shiptech_engine = {
   name: string;
   power: int;
   space: int;
@@ -245,14 +252,17 @@ type st_engine = {
   tech_i: int;
 }
 
-type st_armor = {
+let mk_engine name power space cost warp tech_i : shiptech_engine =
+  {name; power; space; cost; warp; tech_i}
+
+type shiptech_armor = {
   name: string;
   perhull: per_ship_hull array;
   armor: int;
   tech_i: int;
 }
 
-type st_shield = {
+type shiptech_shield = {
   name: string;
   perhull: per_ship_hull array;
   absorb: int;
@@ -271,7 +281,7 @@ type special_bool =
   | Special_bool_oracle
   | Special_bool_disp
 
-type st_special = {
+type shiptech_special = {
   name: string;
   extra_ext: string;
   perhull: per_ship_hull array;
@@ -287,7 +297,7 @@ type st_special = {
   boolmask: int;
 }
 
-type st_hull = {
+type shiptech_hull = {
   name: string;
   cost: int;
   space: int;
@@ -296,8 +306,8 @@ type st_hull = {
   defense: int;
 }
 
-let weapon_table = [|
-  make_weapon "NONE" ""
+let tbl_shiptech_weap = [|
+  mk_weapon "NONE" ""
     0 0 0
     0 false false false
     0 1 0 (-1)
@@ -306,7 +316,7 @@ let weapon_table = [|
     0 [0; 0; 0; 0; 0; 0; 0]
     0 0
   ;
-  make_weapon "NUCLEAR_BOMB" "GROUND_ATTACKS_ONLY"
+  mk_weapon "NUCLEAR_BOMB" "GROUND_ATTACKS_ONLY"
     3 12 1
     0 false true false
     0 1 1 10
@@ -315,7 +325,7 @@ let weapon_table = [|
     0 [0x0; 0x0; 0x0; 0x0; 0x0; 0x0; 0x0]
     0x25 0
   ;
-  make_weapon "LASER" ""
+  mk_weapon "LASER" ""
     1 4 1
     0 false false false
     0 1 1 (-1)
@@ -324,7 +334,7 @@ let weapon_table = [|
     0 [0x40; 0x41; 0x42; 0x43; 0x44; 0x45; 0x46]
     0x7 0
     ;
-  make_weapon "NUCLEAR MISSILE" "2 SHOTS, +1 SPEED"
+  mk_weapon "NUCLEAR MISSILE" "2 SHOTS, +1 SPEED"
     4 4 6
     0 false false false
     0 1 1 2
@@ -333,7 +343,7 @@ let weapon_table = [|
     2 [ 0x60; 0x0; 0x0; 0x6; 0x50; 0x0; 0x0 ]
     0x8 1
     ;
-  make_weapon "NUCLEAR MISSILE" "5 SHOTS"
+  mk_weapon "NUCLEAR MISSILE" "5 SHOTS"
     4 4 4
     0 false false false
     0 1 1 5
@@ -342,7 +352,7 @@ let weapon_table = [|
     2 [ 0x40; 0x0; 0x0; 0x6; 0x50; 0x0; 0x0 ]
     0x8 1
     ;
-  make_weapon "HEAVY LASER" ""
+  mk_weapon "HEAVY LASER" ""
         1 7 2
         0 false false false
         0 1 1 (-1)
@@ -351,7 +361,7 @@ let weapon_table = [|
         0 [0x40;0x41;0x42;0x43;0x44;0x45;0x46]
         0xa 0
     ;
-  make_weapon "HYPER-V ROCKET" "2 SHOTS, +1 SPEED"
+  mk_weapon "HYPER-V ROCKET" "2 SHOTS, +1 SPEED"
         6 6 7
         0 false false false
         0 1 1 2
@@ -360,7 +370,7 @@ let weapon_table = [|
         2 [0x70;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "HYPER-V ROCKET" "5 SHOTS"
+  mk_weapon "HYPER-V ROCKET" "5 SHOTS"
         6 6 5
         0 false false false
         0 1 1 5
@@ -369,7 +379,7 @@ let weapon_table = [|
         2 [0x50;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "GATLING LASER" "FIRES 4 TIMES/TURN"
+  mk_weapon "GATLING LASER" "FIRES 4 TIMES/TURN"
         1 4 1
         0 false false false
         0 1 4 (-1)
@@ -378,7 +388,7 @@ let weapon_table = [|
         0 [0x43;0x41;0x3f;0x25;0x3f;0x41;0x43]
         0x1 0
     ;
-  make_weapon "NEUTRON PELLET GUN" "HALVES ENEMY SHIELDS"
+  mk_weapon "NEUTRON PELLET GUN" "HALVES ENEMY SHIELDS"
         2 5 1
         0 true false false
         0 1 1 (-1)
@@ -387,7 +397,7 @@ let weapon_table = [|
         0 [0x0;0xae;0x0;0x0;0x0;0xae;0x0]
         0x1 0
     ;
-  make_weapon "HYPER-X ROCKET" "2 SHOTS, +1 TO HIT"
+  mk_weapon "HYPER-X ROCKET" "2 SHOTS, +1 TO HIT"
         8 8 7
         1 false false false
         0 1 1 2
@@ -396,7 +406,7 @@ let weapon_table = [|
         2 [0x60;0x0;0x0;0x6;0x50;0x0;0x0]
         0x8 1
     ;
-  make_weapon "HYPER-X ROCKET" "5 SHOTS, +1 TO HIT"
+  mk_weapon "HYPER-X ROCKET" "5 SHOTS, +1 TO HIT"
         8 8 5
         1 false false false
         0 1 1 5
@@ -405,7 +415,7 @@ let weapon_table = [|
         2 [0x50;0x0;0x0;0x6;0x50;0x0;0x0]
         0x8 1
     ;
-  make_weapon "FUSION BOMB" "GROUND ATTACKS ONLY"
+  mk_weapon "FUSION BOMB" "GROUND ATTACKS ONLY"
         5 20 1
         0 false true false
         0 1 1 10
@@ -414,7 +424,7 @@ let weapon_table = [|
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
-  make_weapon "ION CANNON" ""
+  mk_weapon "ION CANNON" ""
         3 8 1
         0 false false false
         0 1 1 (-1)
@@ -423,7 +433,7 @@ let weapon_table = [|
         1 [0xe4;0xe5;0xe6;0xe7;0xe6;0xe5;0xe4]
         0x10 0
     ;
-  make_weapon "HEAVY ION CANNON" ""
+  mk_weapon "HEAVY ION CANNON" ""
         3 15 2
         0 false false false
         0 1 1 (-1)
@@ -432,7 +442,7 @@ let weapon_table = [|
         1 [0xe4;0xe5;0xe6;0xe7;0xe6;0xe5;0xe4]
         0xf 0
     ;
-  make_weapon "SCATTER PACK V" "2 SHOTS, MIRVS TO 5"
+  mk_weapon "SCATTER PACK V" "2 SHOTS, MIRVS TO 5"
         6 6 7
         1 false false false
         0 1 1 2
@@ -441,7 +451,7 @@ let weapon_table = [|
         2 [0x60;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 5
     ;
-  make_weapon "SCATTER PACK V" "5 SHOTS, MIRVS TO 5"
+  mk_weapon "SCATTER PACK V" "5 SHOTS, MIRVS TO 5"
         6 6 5
         1 false false false
         0 1 1 5
@@ -450,7 +460,7 @@ let weapon_table = [|
         2 [0x50;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 5
     ;
-  make_weapon "DEATH SPORES" "BIOLOGICAL WEAPON"
+  mk_weapon "DEATH SPORES" "BIOLOGICAL WEAPON"
         1 1 1
         0 false true false
         0 1 1 5
@@ -459,7 +469,7 @@ let weapon_table = [|
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
-  make_weapon "MASS DRIVER" "HALVES ENEMY SHIELDS"
+  mk_weapon "MASS DRIVER" "HALVES ENEMY SHIELDS"
         5 8 1
         0 true false false
         0 1 1 (-1)
@@ -468,7 +478,7 @@ let weapon_table = [|
         0 [0x0;0xc;0x0;0x0;0x0;0xc;0x0]
         0x17 0
     ;
-  make_weapon "MERCULITE MISSILE" "2 SHOTS, +2 TO HIT"
+  mk_weapon "MERCULITE MISSILE" "2 SHOTS, +2 TO HIT"
         10 10 8
         2 false false false
         0 1 1 2
@@ -477,7 +487,7 @@ let weapon_table = [|
         2 [0x80;0x0;0x0;0x4;0x78;0x0;0x0]
         0x8 1
     ;
-  make_weapon "MERCULITE MISSILE" "5 SHOTS, +2 TO HIT"
+  mk_weapon "MERCULITE MISSILE" "5 SHOTS, +2 TO HIT"
         10 10 6
         2 false false false
         0 1 1 5
@@ -486,7 +496,7 @@ let weapon_table = [|
         2 [0x60;0x0;0x0;0x4;0x78;0x0;0x0]
         0x8 1
     ;
-  make_weapon "NEUTRON BLASTER" ""
+  mk_weapon "NEUTRON BLASTER" ""
         3 12 1
         0 false false false
         0 1 1 (-1)
@@ -495,7 +505,7 @@ let weapon_table = [|
         0 [0xcf;0xce;0xcd;0xcc;0xcb;0xca;0xc9]
         0xa 0
     ;
-  make_weapon "HEAVY BLAST CANNON" ""
+  mk_weapon "HEAVY BLAST CANNON" ""
         3 24 2
         0 false false false
         0 1 1 (-1)
@@ -504,7 +514,7 @@ let weapon_table = [|
         0 [0xcf;0xce;0xcd;0xcc;0xcb;0xca;0xc9]
         0x12 0
     ;
-  make_weapon "ANTI-MATTER BOMB" "GROUND ATTACKS ONLY"
+  mk_weapon "ANTI-MATTER BOMB" "GROUND ATTACKS ONLY"
         10 40 1
         0 false true false
         0 1 1 10
@@ -513,7 +523,7 @@ let weapon_table = [|
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
-  make_weapon "GRAVITON BEAM" "STREAMING ATTACK"
+  mk_weapon "GRAVITON BEAM" "STREAMING ATTACK"
         1 15 1
         0 false false false
         0 1 1 (-1)
@@ -522,7 +532,7 @@ let weapon_table = [|
         2 [0xd1;0xd2;0xd3;0xd4;0xd5;0xd6;0xd7]
         0x0 1
     ;
-  make_weapon "STINGER MISSILE" "2 SHOTS, +3 TO HIT"
+  mk_weapon "STINGER MISSILE" "2 SHOTS, +3 TO HIT"
         15 15 9
         3 false false false
         0 1 1 2
@@ -531,7 +541,7 @@ let weapon_table = [|
         2 [0x90;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "STINGER MISSILE" "5 SHOTS, +3 TO HIT"
+  mk_weapon "STINGER MISSILE" "5 SHOTS, +3 TO HIT"
         15 15 7
         3 false false false
         0 1 1 5
@@ -540,7 +550,7 @@ let weapon_table = [|
         2 [0x70;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "HARD BEAM" "HALVES SHIELD STR"
+  mk_weapon "HARD BEAM" "HALVES SHIELD STR"
         8 12 1
         0 true false false
         0 1 1 (-1)
@@ -549,7 +559,7 @@ let weapon_table = [|
         0 [0xa1;0x96;0xa1;0x96;0xa1;0x96;0xa1]
         0x1 0
     ;
-  make_weapon "FUSION BEAM" ""
+  mk_weapon "FUSION BEAM" ""
         4 16 1
         0 false false false
         0 1 1 (-1)
@@ -558,7 +568,7 @@ let weapon_table = [|
         0 [0xb7;0xb6;0xb5;0xb4;0xb3;0xb2;0xb1]
         0xb 0
     ;
-  make_weapon "HEAVY FUSION BEAM" ""
+  mk_weapon "HEAVY FUSION BEAM" ""
         4 30 2
         0 false false false
         0 1 1 (-1)
@@ -567,7 +577,7 @@ let weapon_table = [|
         0 [0xb7;0xb6;0xb5;0xb4;0xb3;0xb2;0xb1]
         0x19 0
     ;
-  make_weapon "OMEGA-V BOMB" "GROUND ATTACKS ONLY"
+  mk_weapon "OMEGA-V BOMB" "GROUND ATTACKS ONLY"
         20 50 1
         0 false true false
         0 1 1 10
@@ -576,7 +586,7 @@ let weapon_table = [|
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
-  make_weapon "ANTI-MATTER TORP" "FIRES ONE PER 2 TURNS"
+  mk_weapon "ANTI-MATTER TORP" "FIRES ONE PER 2 TURNS"
         30 30 8
         4 false false false
         1 1 1 (-1)
@@ -585,7 +595,7 @@ let weapon_table = [|
         2 [0x80;0x0;0x0;0x3;0xa0;0x0;0x0]
         0x11 1
     ;
-  make_weapon "MEGABOLT CANNON" "+3 LEVELS TO HIT"
+  mk_weapon "MEGABOLT CANNON" "+3 LEVELS TO HIT"
         2 20 1
         3 false false false
         0 1 1 (-1)
@@ -594,7 +604,7 @@ let weapon_table = [|
         3 [0xaf;0xd7;0xae;0xd7;0xaf;0xd7;0xae]
         0x12 0
     ;
-  make_weapon "PHASOR" ""
+  mk_weapon "PHASOR" ""
         5 20 1
         0 false false false
         0 1 1 (-1)
@@ -603,7 +613,7 @@ let weapon_table = [|
         1 [0xdb;0xdc;0xdd;0xde;0xdd;0xdc;0xdb]
         0x1c 0
     ;
-  make_weapon "HEAVY PHASOR" ""
+  mk_weapon "HEAVY PHASOR" ""
         5 40 2
         0 false false false
         0 1 1 (-1)
@@ -612,7 +622,7 @@ let weapon_table = [|
         1 [0xdb;0xdc;0xdd;0xde;0xdd;0xdc;0xdb]
         0x1a 0
     ;
-  make_weapon "SCATTER PACK VII" "2 SHOTS, MIRVS TO 7"
+  mk_weapon "SCATTER PACK VII" "2 SHOTS, MIRVS TO 7"
         10 10 8
         2 false false false
         0 1 1 2
@@ -621,7 +631,7 @@ let weapon_table = [|
         2 [0x80;0x0;0x0;0x4;0x78;0x0;0x0]
         0x3 7
     ;
-  make_weapon "SCATTER PACK VII" "5 SHOTS, MIRVS TO 7"
+  mk_weapon "SCATTER PACK VII" "5 SHOTS, MIRVS TO 7"
         10 10 6
         2 false false false
         0 1 1 5
@@ -630,7 +640,7 @@ let weapon_table = [|
         2 [0x60;0x0;0x0;0x4;0x78;0x0;0x0]
         0x3 7
     ;
-  make_weapon "DOOM VIRUS" "BIOLOGICAL WEAPON"
+  mk_weapon "DOOM VIRUS" "BIOLOGICAL WEAPON"
         2 2 1
         0 false true false
         0 1 1 5
@@ -639,7 +649,7 @@ let weapon_table = [|
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
-  make_weapon "AUTO BLASTER" "FIRES 3 TIMES/TURN"
+  mk_weapon "AUTO BLASTER" "FIRES 3 TIMES/TURN"
         4 16 1
         0 false false false
         0 1 3 (-1)
@@ -648,7 +658,7 @@ let weapon_table = [|
         1 [0xbe;0xbd;0xbc;0xbb;0xba;0xb9;0xb8]
         0x1 0
     ;
-  make_weapon "PULSON MISSILE" "2 SHOTS, +4 TO HIT"
+  mk_weapon "PULSON MISSILE" "2 SHOTS, +4 TO HIT"
         20 20 10
         4 false false false
         0 1 1 2
@@ -657,7 +667,7 @@ let weapon_table = [|
         2 [0xa0;0x0;0x0;0x4;0xa0;0x0;0x0]
         0x8 1
     ;
-  make_weapon "PULSON MISSILE" "5 SHOTS, +4 TO HIT"
+  mk_weapon "PULSON MISSILE" "5 SHOTS, +4 TO HIT"
         20 20 8
         4 false false false
         0 1 1 5
@@ -666,7 +676,7 @@ let weapon_table = [|
         2 [0x80;0x0;0x0;0x4;0xa0;0x0;0x0]
         0x8 1
     ;
-  make_weapon "TACHYON BEAM" "STREAMING ATTACK"
+  mk_weapon "TACHYON BEAM" "STREAMING ATTACK"
         1 25 1
         0 false false false
         0 1 1 (-1)
@@ -675,7 +685,7 @@ let weapon_table = [|
         2 [0x8e;0x8c;0x8b;0x8a;0x89;0x88;0x87]
         0x1f 1
     ;
-  make_weapon "GAUSS AUTOCANON" "1/2 SHIELDS, FIRES 4"
+  mk_weapon "GAUSS AUTOCANON" "1/2 SHIELDS, FIRES 4"
         7 10 1
         0 true false false
         0 1 4 (-1)
@@ -684,7 +694,7 @@ let weapon_table = [|
         0 [0x0;0xf;0x0;0x12;0x0;0x15;0x0]
         0x1 0
     ;
-  make_weapon "PARTICLE BEAM" "HALVES SHIELD STR"
+  mk_weapon "PARTICLE BEAM" "HALVES SHIELD STR"
         10 20 1
         0 true false false
         0 1 1 (-1)
@@ -693,7 +703,7 @@ let weapon_table = [|
         0 [0x0;0xf;0x0;0x12;0x0;0x15;0x0]
         0x21 0
     ;
-  make_weapon "HERCULAR MISSILE" "2 SHOTS, +5 TO HIT"
+  mk_weapon "HERCULAR MISSILE" "2 SHOTS, +5 TO HIT"
         25 25 10
         5 false false false
         0 1 1 2
@@ -702,7 +712,7 @@ let weapon_table = [|
         2 [0xb0;0x0;0x0;0x6;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "HERCULAR MISSILE" "5 SHOTS, +5 TO HIT"
+  mk_weapon "HERCULAR MISSILE" "5 SHOTS, +5 TO HIT"
         25 25 9
         5 false false false
         0 1 1 5
@@ -711,7 +721,7 @@ let weapon_table = [|
         2 [0x90;0x0;0x0;0x6;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "PLASMA CANNON" ""
+  mk_weapon "PLASMA CANNON" ""
         6 30 1
         0 false false false
         0 1 1 (-1)
@@ -720,7 +730,7 @@ let weapon_table = [|
         2 [0x46;0x45;0x44;0x43;0x44;0x45;0x46]
         0x1e 0
     ;
-  make_weapon "DISRUPTOR" ""
+  mk_weapon "DISRUPTOR" ""
         10 40 2
         0 false false false
         0 1 1 (-1)
@@ -729,7 +739,7 @@ let weapon_table = [|
         0 [0xf7;0xf6;0xf5;0xf4;0xf3;0xf2;0xf1]
         0x1c 0
     ;
-  make_weapon "PULSE PHASOR" "FIRES 3 TIMES/TURN"
+  mk_weapon "PULSE PHASOR" "FIRES 3 TIMES/TURN"
         5 20 1
         0 false false false
         0 1 3 (-1)
@@ -738,7 +748,7 @@ let weapon_table = [|
         1 [0xdb;0xdc;0xdd;0xde;0xdd;0xdc;0xdb]
         0x1 0
     ;
-  make_weapon "NEUTRONIUM BOMB" "GROUND ATTACKS ONLY"
+  mk_weapon "NEUTRONIUM BOMB" "GROUND ATTACKS ONLY"
         40 70 1
         0 false true false
         0 1 1 10
@@ -747,7 +757,7 @@ let weapon_table = [|
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x14 0
     ;
-  make_weapon "BIO TERMINATOR" "BIOLOGICAL WEAPON"
+  mk_weapon "BIO TERMINATOR" "BIOLOGICAL WEAPON"
         3 3 1
         0 false true false
         0 1 1 5
@@ -756,7 +766,7 @@ let weapon_table = [|
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x14 0
     ;
-  make_weapon "HELLFIRE TORPEDO" "HITS ALL FOUR SHIELDS"
+  mk_weapon "HELLFIRE TORPEDO" "HITS ALL FOUR SHIELDS"
         25 25 10
         6 false false false
         2 4 1 (-1)
@@ -765,7 +775,7 @@ let weapon_table = [|
         2 [0xa0;0x0;0x0;0x4;0x8c;0x0;0x0]
         0x11 1
     ;
-  make_weapon "ZEON MISSILE" "2 SHOTS, +6 TO HIT"
+  mk_weapon "ZEON MISSILE" "2 SHOTS, +6 TO HIT"
         30 30 9
         6 false false false
         0 1 1 2
@@ -774,7 +784,7 @@ let weapon_table = [|
         2 [0xc0;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "ZEON MISSILE" "5 SHOTS, +6 TO HIT"
+  mk_weapon "ZEON MISSILE" "5 SHOTS, +6 TO HIT"
         30 30 7
         6 false false false
         0 1 1 5
@@ -783,7 +793,7 @@ let weapon_table = [|
         2 [0xa0;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
-  make_weapon "PROTON TORPEDO" "FIRES ONE PER 2 TURNS"
+  mk_weapon "PROTON TORPEDO" "FIRES ONE PER 2 TURNS"
         75 75 10
         6 false false false
         3 1 1 (-1)
@@ -792,7 +802,7 @@ let weapon_table = [|
         2 [0xff;0x0;0x0;0x3;0xc8;0x0;0x0]
         0x11 1
     ;
-  make_weapon "SCATTER PACK X" "2 SHOTS, MIRVS TO 10"
+  mk_weapon "SCATTER PACK X" "2 SHOTS, MIRVS TO 10"
         15 15 10
         3 false false false
         0 1 1 2
@@ -801,7 +811,7 @@ let weapon_table = [|
         2 [0x90;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 10
     ;
-  make_weapon "SCATTER PACK X" "5 SHOTS, MIRVS TO 10"
+  mk_weapon "SCATTER PACK X" "5 SHOTS, MIRVS TO 10"
         15 15 10
         3 false false false
         0 1 1 5
@@ -810,7 +820,7 @@ let weapon_table = [|
         2 [0x70;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 10
     ;
-  make_weapon "TRI-FOCUS PLASMA" ""
+  mk_weapon "TRI-FOCUS PLASMA" ""
         20 50 1
         0 false false false
         0 1 1 (-1)
@@ -819,7 +829,7 @@ let weapon_table = [|
         1 [0x46;0x45;0x44;0x43;0x44;0x45;0x46]
         0x1b 0
     ;
-  make_weapon "STELLAR CONVERTER" "HITS ALL FOUR SHIELDS"
+  mk_weapon "STELLAR CONVERTER" "HITS ALL FOUR SHIELDS"
         10 35 3
         0 false false false
         0 4 1 (-1)
@@ -828,7 +838,7 @@ let weapon_table = [|
         3 [0x49;0x56;0x71;0x46;0x49;0x56;0x71]
         0x15 0
     ;
-  make_weapon "MAULER DEVICE" "CRUEL BRUTAL DAMAGE"
+  mk_weapon "MAULER DEVICE" "CRUEL BRUTAL DAMAGE"
         20 100 1
         0 false false false
         0 1 1 (-1)
@@ -837,7 +847,7 @@ let weapon_table = [|
         4 [0xbb;0xbc;0xbd;0xbd;0xbd;0xbc;0xbb]
         0x23 0
     ;
-  make_weapon "PLASMA TORPEDO" "LOSES 15 DAMAGE/HEX"
+  mk_weapon "PLASMA TORPEDO" "LOSES 15 DAMAGE/HEX"
         150 150 10
         7 false false true
         4 1 1 (-1)
@@ -846,7 +856,7 @@ let weapon_table = [|
         2 [0xc0;0x0;0x0;0x3;0xa0;0x0;0x0]
         0x11 1
     ;
-  make_weapon "CRYSTAL RAY" ""
+  mk_weapon "CRYSTAL RAY" ""
         100 300 3
         0 false false false
         0 4 1 (-1)
@@ -855,7 +865,7 @@ let weapon_table = [|
         3 [0xe;0xc7;0xe;0xe;0xef;0xe;0xc7]
         0x18 0
     ;
-  make_weapon "DEATH RAY" ""
+  mk_weapon "DEATH RAY" ""
         200 1000 1
         0 false false false
         0 1 1 (-1)
@@ -864,7 +874,7 @@ let weapon_table = [|
         4 [0xcb;0xc5;0xc4;0x46;0xc4;0xc5;0xcb]
         0x1d 0
     ;
-  make_weapon "AMEOBA STREAM" ""
+  mk_weapon "AMEOBA STREAM" ""
         250 1000 3
         0 false false false
         0 1 1 (-1)
@@ -874,33 +884,34 @@ let weapon_table = [|
         0xc 1
 |]
 
-(*
-struct shiptech_comp_s tbl_shiptech_comp[SHIP_COMP_NUM] = {
-    { &game_str_st_none, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, 0, 0 },
-    { &game_str_tbl_st_comp[0], { 5, 10, 20, 100 }, { 5, 10, 20, 100 }, { 40, 200, 1000, 5000 }, 1, 1 },
-    { &game_str_tbl_st_comp[1], { 7, 15, 30, 150 }, { 7, 15, 30, 150 }, { 50, 240, 1200, 6000 }, 5, 2 },
-    { &game_str_tbl_st_comp[2], { 10, 20, 40, 200 }, { 10, 20, 40, 200 }, { 60, 280, 1400, 7000 }, 10, 3 },
-    { &game_str_tbl_st_comp[3], { 12, 25, 50, 250 }, { 12, 25, 50, 250 }, { 70, 320, 1600, 8000 }, 15, 4 },
-    { &game_str_tbl_st_comp[4], { 15, 30, 60, 300 }, { 15, 30, 60, 300 }, { 80, 360, 1800, 9000 }, 20, 5 },
-    { &game_str_tbl_st_comp[5], { 17, 35, 70, 350 }, { 17, 35, 70, 350 }, { 90, 400, 2000, 10000 }, 25, 6 },
-    { &game_str_tbl_st_comp[6], { 20, 40, 80, 400 }, { 20, 40, 80, 400 }, { 100, 440, 2200, 11000 }, 30, 7 },
-    { &game_str_tbl_st_comp[7], { 22, 45, 90, 450 }, { 22, 45, 90, 450 }, { 110, 480, 2400, 12000 }, 35, 8 },
-    { &game_str_tbl_st_comp[8], { 25, 50, 100, 500 }, { 25, 50, 100, 500 }, { 120, 520, 2600, 13000 }, 40, 9 },
-    { &game_str_tbl_st_comp[9], { 27, 55, 110, 550 }, { 27, 55, 110, 550 }, { 130, 560, 2800, 14000 }, 45, 10 },
-    { &game_str_tbl_st_comp[10], { 30, 60, 120, 600 }, { 30, 60, 120, 600 }, { 140, 600, 3000, 15000 }, 50, 11 }
-};
+let tbl_shiptech_comp = [|
+  mk_comp "NONE" [0; 0; 0; 0] [0; 0; 0; 0] [0; 0; 0; 0] 0 0;
+  mk_comp "MARK I" [5; 10; 20; 100] [5; 10; 20; 100] [40; 200; 1000; 5000] 1 1;
+  mk_comp "MARK II" [7; 15; 30; 150] [7; 15; 30; 150] [50; 240; 1200; 6000] 5 2;
+  mk_comp "MARK III" [10; 20; 40; 200] [10; 20; 40; 200] [60; 280; 1400; 7000] 10 3;
+  mk_comp "MARK IV" [12; 25; 50; 250] [12; 25; 50; 250] [70; 320; 1600; 8000] 15 4;
+  mk_comp "MARK V" [15; 30; 60; 300] [15; 30; 60; 300] [80; 360; 1800; 9000] 20 5;
+  mk_comp "MARK VI" [17; 35; 70; 350] [17; 35; 70; 350] [90; 400; 2000; 10000] 25 6;
+  mk_comp "MARK VII" [20; 40; 80; 400] [20; 40; 80; 400] [100; 440; 2200; 11000] 30 7;
+  mk_comp "MARK VIII" [22; 45; 90; 450] [22; 45; 90; 450] [110; 480; 2400; 12000] 35 8;
+  mk_comp "MARK IX" [25; 50; 100; 500] [25; 50; 100; 500] [120; 520; 2600; 13000] 40 9;
+  mk_comp "MARK X" [27; 55; 110; 550] [27; 55; 110; 550] [130; 560; 2800; 14000] 45 10;
+  mk_comp "MARK XI" [30; 60; 120; 600] [30; 60; 120; 600] [140; 600; 3000; 15000] 50 11;
+|]
 
-struct shiptech_engine_s tbl_shiptech_engine[SHIP_ENGINE_NUM] = {
-    { &game_str_tbl_st_engine[0], 10, 10, 20, 1, 1 },
-    { &game_str_tbl_st_engine[1], 20, 18, 40, 2, 6 },
-    { &game_str_tbl_st_engine[2], 30, 26, 60, 3, 12 },
-    { &game_str_tbl_st_engine[3], 40, 33, 80, 4, 18 },
-    { &game_str_tbl_st_engine[4], 50, 36, 100, 5, 24 },
-    { &game_str_tbl_st_engine[5], 60, 40, 120, 6, 30 },
-    { &game_str_tbl_st_engine[6], 70, 44, 140, 7, 36 },
-    { &game_str_tbl_st_engine[7], 80, 47, 160, 8, 42 },
-    { &game_str_tbl_st_engine[8], 90, 50, 180, 9, 48 }
-};
+let tbl_shiptech_engine = [|
+   mk_engine "RETROS" 10 10 20 1 1 ;
+   mk_engine "NUCLEAR" 20 18 40 2 6 ;
+   mk_engine "SUB-LIGHT" 30 26 60 3 12 ;
+   mk_engine "FUSION" 40 33 80 4 18 ;
+   mk_engine "IMPULSE" 50 36 100 5 24 ;
+   mk_engine "ION" 60 40 120 6 30 ;
+   mk_engine "ANTI-MATTER" 70 44 140 7 36 ;
+   mk_engine "INTERPHASED" 80 47 160 8 42 ;
+   mk_engine "HYPERTHRUST" 90 50 180 9 48 ;
+|]
+
+(*
 
 struct shiptech_armor_s tbl_shiptech_armor[SHIP_ARMOR_NUM] = {
     { &game_str_tbl_st_armor[0], { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, 100, 1 },

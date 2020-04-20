@@ -18,9 +18,9 @@ let tech_reduce_25percent_per_10pts = [|
   24
 |]
 
-let get_tech_reduce_50 percent =
+let get_tech_reduce_50 percent (* 1..100 *) =
   let percent = if percent > 50 then 50 else percent in
-  tech_reduce_50percent_per_10pts.(percent)
+  tech_reduce_50percent_per_10pts.(percent - 1)
 
 let get_base_cost_mod_armor g player percent =
   0

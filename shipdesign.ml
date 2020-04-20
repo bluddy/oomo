@@ -7,7 +7,7 @@ let ship_look_per_banner = 24
 let weapon_slot_num = 4
 let special_slot_num = 3
 
-type per_weaponslot = {
+type weapon_info = {
   wtype: weapon;
   wnum: int;
 }
@@ -18,7 +18,7 @@ type shipdesign = {
   space: int;
   hull: ship_hull;
   look: int;
-  perslot: per_weaponslot array;
+  weapon_info: weapon_info array;
   engine: ship_engine;
   engines: int;
   special: ship_special array; (* special_slot_num *)

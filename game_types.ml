@@ -1,3 +1,4 @@
+open Utils
 open Types
 open Shipdesign
 
@@ -34,7 +35,7 @@ type techdata = {
   investment: int list; (* TECH_FIELD_NUM *)
   project: int list; (* TECH_FIELD_NUM *)
   cost: int list; (* TECH_FIELD_NUM *)
-  completed: int list; (* TECH_FIELD_NUM *) (* num completed projects *)
+  completed: int list; (* TECH_FIELD_NUM *) (* num of completed projects, len of srd[i].researchcompleted *)
 }
 
 let tech_tier_num = 10
@@ -50,9 +51,12 @@ type ship_research_pership = {
 
 type ship_research = {
   research_list: int array; (* tech_field_num * tech_tier_num * 3 *)
-  research_complete: int array; (* tech_field_num * tech_per_field *)
+  research_completed: IntSet.t array; (* tech_field_num *)
   pership: ship_research_pership array;
 }
+
+let research_completed_of_field srd field =
+  srd.research_completed.(tech_field_to_enum field)
 
 type empire_tech_orbit_perplayer = {
   contact: bool;
@@ -343,3 +347,5 @@ type t = {
     transport: transport array; (* transport_max *)
     evn: events;
 }
+
+let get_srd g player = g.perplayer.(player).srd

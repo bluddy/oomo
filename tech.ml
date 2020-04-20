@@ -1,4 +1,7 @@
+open Containers
+open Utils
 open Types
+open Game_types
 
 let tech_reduce_50percent_per_10pts = [|
   100; 93; 87; 81; 76; 71; 66; 62; 58; 54;
@@ -22,6 +25,24 @@ let get_tech_reduce_50 percent (* 1..100 *) =
   let percent = if percent > 50 then 50 else percent in
   tech_reduce_50percent_per_10pts.(percent - 1)
 
+let player_has_tech g field tech player =
+  let srd = get_srd g player in
+  let research = research_completed_of_field srd field in
+  IntSet.mem tech research
+
 let get_base_cost_mod_armor g player percent =
-  0
+  let idx =
+    Shiptech.armor_foldi ~init:0
+      (fun i acc ship_armor ->
+        if player_has_tech g Tech_field_construction ship_armor.tech_i player
+        then i else acc)
+  in
+  let idx = if idx > 0 then idx - 1 else 0 in
+  let mult = get_tech_reduce_50 percent in
+  let armor = Shiptech.tbl_armor.(idx) in
+  let cost =
+    ((Shiptech.armor_get_hull armor Ship_hull_large).cost +
+    (Shiptech.hull_get Ship_hull_large).cost * mult) / 1500
+  in
+  cost
 

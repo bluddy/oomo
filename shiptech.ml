@@ -274,6 +274,9 @@ type shiptech_armor = {
   tech_i: int;
 }
 
+let armor_get_hull armor hull =
+  armor.shiphull.(ship_hull_to_enum hull)
+
 let mk_armor name cost_l space_l armor tech_i =
   let shiphull =
     List.map2 (fun cost space -> {cost; space}) cost_l space_l
@@ -347,7 +350,7 @@ type shiptech_hull = {
 let mk_hull name cost space hits power defense =
   {name; cost; space; hits; power; defense}
 
-let tbl_shiptech_weap = [|
+let tbl_weap = [|
   mk_weapon "NONE" ""
     0 0 0
     0 false false false
@@ -925,7 +928,7 @@ let tbl_shiptech_weap = [|
         0xc 1
 |]
 
-let tbl_shiptech_comp = [|
+let tbl_comp = [|
   mk_comp "NONE" [0; 0; 0; 0] [0; 0; 0; 0] [0; 0; 0; 0] 0 0;
   mk_comp "MARK I" [5; 10; 20; 100] [5; 10; 20; 100] [40; 200; 1000; 5000] 1 1;
   mk_comp "MARK II" [7; 15; 30; 150] [7; 15; 30; 150] [50; 240; 1200; 6000] 5 2;
@@ -940,7 +943,7 @@ let tbl_shiptech_comp = [|
   mk_comp "MARK XI" [30; 60; 120; 600] [30; 60; 120; 600] [140; 600; 3000; 15000] 50 11;
 |]
 
-let tbl_shiptech_engine = [|
+let tbl_engine = [|
    mk_engine "RETROS" 10 10 20 1 1 ;
    mk_engine "NUCLEAR" 20 18 40 2 6 ;
    mk_engine "SUB-LIGHT" 30 26 60 3 12 ;
@@ -952,7 +955,7 @@ let tbl_shiptech_engine = [|
    mk_engine "HYPERTHRUST" 90 50 180 9 48 ;
 |]
 
-let tbl_shiptech_armor = [|
+let tbl_armor = [|
   mk_armor "TITANIUM"      [0; 0; 0; 0] [0; 0; 0; 0] 100 1;
   mk_armor "TITANIUM II"   [20; 100; 500; 2500] [20; 80; 400; 2000] 150 1;
   mk_armor "DURALLOY"      [20; 100; 600; 3000] [2; 10; 60; 300] 150 10;
@@ -969,8 +972,15 @@ let tbl_shiptech_armor = [|
   mk_armor "NEUTRONIUM II" [180; 900; 4500; 25000] [50; 175; 875; 4375] 600 50;
 |]
 
+let armor_foldi f ~init =
+  Array.fold_left (fun (i, acc) x ->
+    let acc' = f i acc x in
+    (i+1, acc'))
+    (0, init)
+    tbl_armor
+  |> snd
 
-let tbl_shiptech_shield = [|
+let tbl_shield = [|
   mk_shield "NONE" [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;
   mk_shield "CLASS I" [ 30; 190; 1200; 7500 ] [ 5; 20; 60; 250 ] [ 5; 20; 60; 250 ] 1 1;
   mk_shield "CLASS II" [ 35; 220; 1400; 8750 ] [ 10; 35; 90; 375 ] [ 10; 35; 90; 375 ] 2 4;
@@ -985,7 +995,7 @@ let tbl_shiptech_shield = [|
   mk_shield "CLASS XV" [ 90; 490; 3200; 20000 ] [ 55; 160; 360; 1500 ] [ 55; 160; 360; 1500 ] 15 50;
 |]
 
-let tbl_shiptech_jammer = [|
+let tbl_jammer = [|
   mk_jammer "NONE"        [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;
   mk_jammer "JAMMER I"    [ 10; 20; 40; 170 ] [ 10; 20; 40; 170 ] [ 25; 150; 1000; 6250 ] 2 1;
   mk_jammer "JAMMER II"   [ 15; 30; 60; 250 ] [ 15; 30; 60; 250 ] [ 27; 165; 1100; 6875 ] 7 2;
@@ -1000,14 +1010,16 @@ let tbl_shiptech_jammer = [|
 |]
 
 
-let tbl_shiptech_hull = [|
+let tbl_hull = [|
   mk_hull "SMALL" 60 40 3 2 2;
   mk_hull "MEDIUM" 360 200 18 15 1;
   mk_hull "LARGE" 2000 1000 100 100 0;
   mk_hull "HUGE" 12000 5000 600 700 (-1);
 |]
 
-let tbl_shiptech_special = [|
+let hull_get x = tbl_hull.(ship_hull_to_enum x)
+
+let tbl_special = [|
     mk_special "NONE" ""
         [ 0; 0; 0; 0 ]
         [ 0; 0; 0; 0 ]

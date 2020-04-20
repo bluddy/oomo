@@ -2,7 +2,7 @@ open Types
 
 (* Aux game data, not stored in saves *)
 
-type game_aux = {
+type t = {
   human_killer: Player.t;
   local_players: int;
   flag_cheat_galaxy: bool;

@@ -6,6 +6,7 @@ end
 type tech_field =
   | TFComputer | TFConstruction | TFForce_field
   | TFPlanetology | TFPropulsion | TFWeapon
+  [@@deriving enum]
 
 let tech_field_num = 6
 
@@ -48,6 +49,10 @@ type game_event =
 
 type monster_id =
   | Crystal_monster | Amoeba_monster | Guardian_monster
+
+type game_end_type =
+  | End_none | End_lost_exile | End_won_good
+  | End_final_war | End_won_tyrant | End_lost_funeral | End_quit
 
 type governor_eco_mode =
   | Grow_before_def | Grow_before_last

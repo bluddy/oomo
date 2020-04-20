@@ -1,4 +1,5 @@
 open Types
+open Shipdesign
 
 type fleet_enroute = {
   owner: Player.t;
@@ -41,7 +42,7 @@ let tech_per_field = 60
 let tech_max_level = 100
 
 type ship_research_pership = {
-  design: Shipdesign.t;
+  design: shipdesign;
   have_reserve_fuel: bool;
   year: int;
   shipcount: int;
@@ -128,7 +129,7 @@ type empire_tech_orbit = {
   base_weapon: int;
   have_sub_space_int: bool;
   antidote: int;
-  have_colony_for: planet_type;
+  have_colony_for: Planet.planet_type;
   have_eco_restoration_n: int; (* 2,3,5,10,20 *)
   have_terraform_n: int; (* 0,10,...120 *)
   terraform_cost_per_inc: int; (* 5..2 *)
@@ -290,7 +291,7 @@ let nebula_max = 4
 let year_base = 2299
 
 
-type t_player = {
+type per_player = {
   is_ai: bool;
   alive: bool;
   refuse: bool;
@@ -299,6 +300,8 @@ type t_player = {
   seen: seen array; (* planets_max *)
   current_design: shipdesign;
   gaux: Game_aux.t;
+  eto: empire_tech_orbit;
+  srd: ship_research;
 }
 
 type locinfo = {
@@ -313,12 +316,12 @@ type nebula_info = {
 }
 
 type t = {
-    perplayer: t_player array;
+    perplayer: per_player array;
     enroute_num: int;
     transport_num: int;
     year: int; (* init to 1 *)
     players: int;
-    ai_id: ai_t;
+    ai_id: Ai.t;
     active_player: Player.t;
     difficulty: difficulty;
     galaxy_size: galaxy_size;
@@ -335,13 +338,10 @@ type t = {
     election_held: bool;
     nebula_num: int; (* 0..4 *)
     nebula_info: nebula_info array; (* NEBULA_MAX *)
-    planet: planet array; (* planets_max *)
+    planet: Planet.t array; (* planets_max *)
     enroute: fleet_enroute array; (* fleet_enroute_max *)
     transport: transport array; (* transport_max *)
-    eto: empire_tech_orbit array; (* player_num *)
-    srd: shipresearch array; (* player_num *)
-    evn: gameevents;
-    emperor_names: string
+    evn: events;
 }
 
 let rnd_get_new_seed () =
@@ -354,22 +354,11 @@ let game_start g =
     Printf.printf "Game: seed was 0, got new seed 0x%x\n" (g.seed);
     g'
     end
-
-
-
-  let game_ai = match v.ai with
-    | Classic -> 0
-    | ClassicPlus -> 1
-    | Muxer -> 2
-    | Stub -> 3
-  in
-  game_ai
+  else
+    g
 
 let game_update_production v =
   0
 
-let game_update_maint_costs g =
-  let update player = 0 in
 
-  List.map update g.players
 

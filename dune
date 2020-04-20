@@ -1,4 +1,10 @@
 (executable
-  (name game))
+  (preprocess (pps ppx_deriving.enum))
+  (name game)
+  (libraries unix)
+  )
 
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
 

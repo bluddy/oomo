@@ -1,4 +1,5 @@
 open Types
+open Techtypes
 
 type weapon =
   | Wpn_none
@@ -65,8 +66,9 @@ type weapon =
   | Wpn_crystal_ray
   | Wpn_death_ray
   | Weapon_amoeba_stream
+  [@@deriving enum]
 
-type comp =
+type ship_comp =
   | Comp_none
   | Comp_mark_i
   | Comp_mark_ii
@@ -79,8 +81,9 @@ type comp =
   | Comp_mark_ix
   | Comp_mark_x
   | Comp_mark_xi
+  [@@deriving enum]
 
-type engine =
+type ship_engine =
   | Engine_retros
   | Engine_nuclear
   | Engine_sub_light
@@ -90,8 +93,9 @@ type engine =
   | Engine_anti_matter
   | Engine_interphased
   | Engine_hyperthrust
+  [@@deriving enum]
 
-type armor =
+type ship_armor =
   | Armor_titanium
   | Armor_titanium_ii
   | Armor_duralloy
@@ -106,8 +110,9 @@ type armor =
   | Armor_adamantium_ii
   | Armor_neutronium
   | Armor_neutronium_ii
+  [@@deriving enum]
 
-type shield =
+type ship_shield =
   | Shield_none
   | Shield_class_i
   | Shield_class_ii
@@ -120,8 +125,9 @@ type shield =
   | Shield_class_xi
   | Shield_class_xiii
   | Shield_class_xv
+  [@@deriving enum]
 
-type jammer =
+type ship_jammer =
   | Jammer_none
   | Jammer_i
   | Jammer_ii
@@ -133,8 +139,9 @@ type jammer =
   | Jammer_viii
   | Jammer_ix
   | Jammer_x
+  [@@deriving enum]
 
-type special =
+type ship_special =
   | Special_none
   | Special_reserve_fuel_tanks
   | Special_standard_colony_base
@@ -166,12 +173,14 @@ type special =
   | Special_inertial_nullifier
   | Special_oracle_interface
   | Special_displacement_device
+  [@@deriving enum]
 
-type hull =
+type ship_hull =
   | Hull_small
   | Hull_medium
   | Hull_large
   | Hull_huge
+  [@@deriving enum]
 
 type st_weapon = {
   name: string;
@@ -250,17 +259,17 @@ type st_shield = {
   tech_i: int;
 }
 
-type special =
-  | Special_scanner
-  | Special_repulsor
-  | Special_warpdis
-  | Special_stasis
-  | Special_cloak
-  | Special_blackhole
-  | Special_subspace
-  | Special_technull
-  | Special_oracle
-  | Special_disp
+type special_bool =
+  | Special_bool_scanner
+  | Special_bool_repulsor
+  | Special_bool_warpdis
+  | Special_bool_stasis
+  | Special_bool_cloak
+  | Special_bool_blackhole
+  | Special_bool_subspace
+  | Special_bool_technull
+  | Special_bool_oracle
+  | Special_bool_disp
 
 type st_special = {
   name: string;
@@ -298,14 +307,17 @@ let weapon_table = [|
     0 0
   ;
   make_weapon "NUCLEAR_BOMB" "GROUND_ATTACKS_ONLY"
-  3 12 1
-  0 false true false
-  0 1 1 10
-  30 40 10
-  false 
+    3 12 1
+    0 false true false
+    0 1 1 10
+    30 40 10
+    false (tech_weap_to_enum @@ Weap_lasers)
+    0 [0x0; 0x0; 0x0; 0x0; 0x0; 0x0; 0x0]
+    0x25 0
+  ;
 
 
-  
+
 
 
 |]

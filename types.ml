@@ -4,8 +4,8 @@ module Player = struct
 end
 
 type tech_field =
-  | TFComputer | TFConstruction | TFForce_field
-  | TFPlanetology | TFPropulsion | TFWeapon
+  | Tech_field_computer | Tech_field_construction | Tech_field_force_field
+  | Tech_field_planetology | Tech_field_propulsion | Tech_field_weapon
   [@@deriving enum]
 
 let tech_field_num = 6

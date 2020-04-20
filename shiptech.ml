@@ -243,6 +243,13 @@ type shiptech_jammer = {
   level: int;
 }
 
+let mk_jammer name power_l space_l cost_l tech_i level =
+  let shiphull =
+    Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
+    |> Array.of_list
+  in
+  {name; shiphull; tech_i; level}
+
 type shiptech_engine = {
   name: string;
   power: int;
@@ -255,36 +262,57 @@ type shiptech_engine = {
 let mk_engine name power space cost warp tech_i : shiptech_engine =
   {name; power; space; cost; warp; tech_i}
 
+type armor_per_ship_hull = {
+  cost: int;
+  space: int;
+}
+
 type shiptech_armor = {
   name: string;
-  perhull: per_ship_hull array;
+  shiphull: armor_per_ship_hull array;
   armor: int;
   tech_i: int;
 }
 
+let mk_armor name cost_l space_l armor tech_i =
+  let shiphull =
+    List.map2 (fun cost space -> {cost; space}) cost_l space_l
+    |> Array.of_list
+  in
+  {name; shiphull; armor; tech_i}
+
 type shiptech_shield = {
   name: string;
-  perhull: per_ship_hull array;
+  shiphull: per_ship_hull array;
   absorb: int;
   tech_i: int;
 }
 
-type special_bool =
-  | Special_bool_scanner
-  | Special_bool_repulsor
-  | Special_bool_warpdis
-  | Special_bool_stasis
-  | Special_bool_cloak
-  | Special_bool_blackhole
-  | Special_bool_subspace
-  | Special_bool_technull
-  | Special_bool_oracle
-  | Special_bool_disp
+let mk_shield name cost_l space_l power_l absorb tech_i =
+  let shiphull =
+    Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
+    |> Array.of_list
+  in
+  {name; shiphull; absorb; tech_i}
+
+(* boolean flags *)
+type ship_special_bool =
+  | Ship_special_bool_scanner
+  | Ship_special_bool_repulsor
+  | Ship_special_bool_warpdis
+  | Ship_special_bool_stasis
+  | Ship_special_bool_cloak
+  | Ship_special_bool_blackhole
+  | Ship_special_bool_subspace
+  | Ship_special_bool_technull
+  | Ship_special_bool_oracle
+  | Ship_special_bool_disp
+  [@@deriving enum]
 
 type shiptech_special = {
   name: string;
-  extra_ext: string;
-  perhull: per_ship_hull array;
+  extra_str: string;
+  shiphull: per_ship_hull array;
   tech_i: int;
   field: tech_field;
   stype: int;
@@ -297,6 +325,16 @@ type shiptech_special = {
   boolmask: int;
 }
 
+let mk_special name extra_str cost_l space_l power_l tech_i field stype repair
+  extraman misshield extrarange pulsar stream boolmask =
+  let shiphull =
+    Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
+    |> Array.of_list
+  in
+  {name; extra_str; shiphull; tech_i; field; stype; repair; extraman; misshield; extrarange;
+  pulsar; stream; boolmask}
+
+
 type shiptech_hull = {
   name: string;
   cost: int;
@@ -305,6 +343,9 @@ type shiptech_hull = {
   power: int;
   defense: int;
 }
+
+let mk_hull name cost space hits power defense =
+  {name; cost; space; hits; power; defense}
 
 let tbl_shiptech_weap = [|
   mk_weapon "NONE" ""
@@ -911,345 +952,309 @@ let tbl_shiptech_engine = [|
    mk_engine "HYPERTHRUST" 90 50 180 9 48 ;
 |]
 
-(*
+let tbl_shiptech_armor = [|
+  mk_armor "TITANIUM"      [0; 0; 0; 0] [0; 0; 0; 0] 100 1;
+  mk_armor "TITANIUM II"   [20; 100; 500; 2500] [20; 80; 400; 2000] 150 1;
+  mk_armor "DURALLOY"      [20; 100; 600; 3000] [2; 10; 60; 300] 150 10;
+  mk_armor "DURALLOY II"   [30; 150; 900; 4500] [25; 85; 425; 2100] 225 10;
+  mk_armor "ZORTRIUM"      [40; 200; 1000; 5000] [4; 20; 100; 500] 200 17;
+  mk_armor "ZORTRIUM II"   [60; 300; 1500; 7500] [30; 100; 500; 2500] 300 17;
+  mk_armor "ANDRIUM"       [60; 300; 1500; 7500] [6; 30; 150; 750] 250 26;
+  mk_armor "ANDRIUM II"    [90; 450; 2250; 11250] [35; 115; 575; 2875] 375 26;
+  mk_armor "TRITANIUM"     [80; 400; 2000; 10000] [8; 40; 200; 1000] 300 34;
+  mk_armor "TRITANIUM II"  [120; 600; 3000; 15000] [40; 130; 650; 3250] 450 34;
+  mk_armor "ADAMANTIUM"    [100; 500; 2500; 12500] [10; 50; 250; 1250] 350 42;
+  mk_armor "ADAMANTIUM II" [150; 750; 3750; 18750] [45; 150; 750; 3750] 525 42;
+  mk_armor "NEUTRONIUM"    [120; 600; 3000; 15000] [12; 60; 300; 1500] 400 50;
+  mk_armor "NEUTRONIUM II" [180; 900; 4500; 25000] [50; 175; 875; 4375] 600 50;
+|]
 
-struct shiptech_armor_s tbl_shiptech_armor[SHIP_ARMOR_NUM] = {
-    { &game_str_tbl_st_armor[0], { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, 100, 1 },
-    { &game_str_tbl_st_armor[1], { 20, 100, 500, 2500 }, { 20, 80, 400, 2000 }, 150, 1 },
-    { &game_str_tbl_st_armor[2], { 20, 100, 600, 3000 }, { 2, 10, 60, 300 }, 150, 10 },
-    { &game_str_tbl_st_armor[3], { 30, 150, 900, 4500 }, { 25, 85, 425, 2100 }, 225, 10 },
-    { &game_str_tbl_st_armor[4], { 40, 200, 1000, 5000 }, { 4, 20, 100, 500 }, 200, 17 },
-    { &game_str_tbl_st_armor[5], { 60, 300, 1500, 7500 }, { 30, 100, 500, 2500 }, 300, 17 },
-    { &game_str_tbl_st_armor[6], { 60, 300, 1500, 7500 }, { 6, 30, 150, 750 }, 250, 26 },
-    { &game_str_tbl_st_armor[7], { 90, 450, 2250, 11250 }, { 35, 115, 575, 2875 }, 375, 26 },
-    { &game_str_tbl_st_armor[8], { 80, 400, 2000, 10000 }, { 8, 40, 200, 1000 }, 300, 34 },
-    { &game_str_tbl_st_armor[9], { 120, 600, 3000, 15000 }, { 40, 130, 650, 3250 }, 450, 34 },
-    { &game_str_tbl_st_armor[10], { 100, 500, 2500, 12500 }, { 10, 50, 250, 1250 }, 350, 42 },
-    { &game_str_tbl_st_armor[11], { 150, 750, 3750, 18750 }, { 45, 150, 750, 3750 }, 525, 42 },
-    { &game_str_tbl_st_armor[12], { 120, 600, 3000, 15000 }, { 12, 60, 300, 1500 }, 400, 50 },
-    { &game_str_tbl_st_armor[13], { 180, 900, 4500, 25000 }, { 50, 175, 875, 4375 }, 600, 50 }
-};
 
-struct shiptech_shield_s tbl_shiptech_shield[SHIP_SHIELD_NUM] = {
-    { &game_str_st_none, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, 0, 0 },
-    { &game_str_tbl_st_shield[0], { 30, 190, 1200, 7500 }, { 5, 20, 60, 250 }, { 5, 20, 60, 250 }, 1, 1 },
-    { &game_str_tbl_st_shield[1], { 35, 220, 1400, 8750 }, { 10, 35, 90, 375 }, { 10, 35, 90, 375 }, 2, 4 },
-    { &game_str_tbl_st_shield[2], { 40, 250, 1600, 10000 }, { 15, 50, 120, 500 }, { 15, 50, 120, 500 }, 3, 10 },
-    { &game_str_tbl_st_shield[3], { 45, 280, 1800, 11250 }, { 20, 65, 150, 675 }, { 20, 65, 150, 675 }, 4, 14 },
-    { &game_str_tbl_st_shield[4], { 50, 310, 2000, 12500 }, { 25, 80, 180, 750 }, { 25, 80, 180, 750 }, 5, 20 },
-    { &game_str_tbl_st_shield[5], { 55, 340, 2200, 13750 }, { 30, 95, 210, 875 }, { 30, 95, 210, 875 }, 6, 24 },
-    { &game_str_tbl_st_shield[6], { 60, 370, 2400, 15000 }, { 35, 110, 240, 1000 }, { 35, 110, 240, 1000 }, 7, 30 },
-    { &game_str_tbl_st_shield[7], { 65, 400, 2600, 16250 }, { 40, 125, 270, 1125 }, { 40, 125, 270, 1125 }, 9, 34 },
-    { &game_str_tbl_st_shield[8], { 70, 430, 2800, 17500 }, { 45, 140, 300, 1250 }, { 45, 140, 300, 1250 }, 11, 40 },
-    { &game_str_tbl_st_shield[9], { 80, 460, 3000, 18750 }, { 50, 155, 330, 1375 }, { 50, 155, 330, 1375 }, 13, 44 },
-    { &game_str_tbl_st_shield[10], { 90, 490, 3200, 20000 }, { 55, 160, 360, 1500 }, { 55, 160, 360, 1500 }, 15, 50 }
-/*
-    { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-*/
-};
+let tbl_shiptech_shield = [|
+  mk_shield "NONE" [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;
+  mk_shield "CLASS I" [ 30; 190; 1200; 7500 ] [ 5; 20; 60; 250 ] [ 5; 20; 60; 250 ] 1 1;
+  mk_shield "CLASS II" [ 35; 220; 1400; 8750 ] [ 10; 35; 90; 375 ] [ 10; 35; 90; 375 ] 2 4;
+  mk_shield "CLASS III" [ 40; 250; 1600; 10000 ] [ 15; 50; 120; 500 ] [ 15; 50; 120; 500 ] 3 10;
+  mk_shield "CLASS IV" [ 45; 280; 1800; 11250 ] [ 20; 65; 150; 675 ] [ 20; 65; 150; 675 ] 4 14;
+  mk_shield "CLASS V" [ 50; 310; 2000; 12500 ] [ 25; 80; 180; 750 ] [ 25; 80; 180; 750 ] 5 20;
+  mk_shield "CLASS VI" [ 55; 340; 2200; 13750 ] [ 30; 95; 210; 875 ] [ 30; 95; 210; 875 ] 6 24;
+  mk_shield "CLASS VII" [ 60; 370; 2400; 15000 ] [ 35; 110; 240; 1000 ] [ 35; 110; 240; 1000 ] 7 30;
+  mk_shield "CLASS IX" [ 65; 400; 2600; 16250 ] [ 40; 125; 270; 1125 ] [ 40; 125; 270; 1125 ] 9 34;
+  mk_shield "CLASS XI" [ 70; 430; 2800; 17500 ] [ 45; 140; 300; 1250 ] [ 45; 140; 300; 1250 ] 11 40;
+  mk_shield "CLASS XIII" [ 80; 460; 3000; 18750 ] [ 50; 155; 330; 1375 ] [ 50; 155; 330; 1375 ] 13 44;
+  mk_shield "CLASS XV" [ 90; 490; 3200; 20000 ] [ 55; 160; 360; 1500 ] [ 55; 160; 360; 1500 ] 15 50;
+|]
 
-struct shiptech_jammer_s tbl_shiptech_jammer[SHIP_JAMMER_NUM] = {
-    { &game_str_st_none, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, 0, 0 },
-    { &game_str_tbl_st_jammer[0], { 10, 20, 40, 170 }, { 10, 20, 40, 170 }, { 25, 150, 1000, 6250 }, 2, 1 },
-    { &game_str_tbl_st_jammer[1], { 15, 30, 60, 250 }, { 15, 30, 60, 250 }, { 27, 165, 1100, 6875 }, 7, 2 },
-    { &game_str_tbl_st_jammer[2], { 20, 40, 80, 330 }, { 20, 40, 80, 330 }, { 30, 180, 1200, 7500 }, 12, 3 },
-    { &game_str_tbl_st_jammer[3], { 25, 50, 100, 410 }, { 25, 50, 100, 410 }, { 32, 195, 1300, 8125 }, 17, 4 },
-    { &game_str_tbl_st_jammer[4], { 30, 60, 120, 490 }, { 30, 60, 120, 490 }, { 35, 210, 1400, 8750 }, 22, 5 },
-    { &game_str_tbl_st_jammer[5], { 35, 70, 140, 570 }, { 35, 70, 140, 570 }, { 37, 225, 1500, 9375 }, 27, 6 },
-    { &game_str_tbl_st_jammer[6], { 40, 80, 160, 650 }, { 40, 80, 160, 650 }, { 40, 240, 1600, 10000 }, 32, 7 },
-    { &game_str_tbl_st_jammer[7], { 45, 90, 180, 730 }, { 45, 90, 180, 730 }, { 42, 255, 1700, 10625 }, 37, 8 },
-    { &game_str_tbl_st_jammer[8], { 50, 100, 200, 810 }, { 50, 100, 200, 810 }, { 45, 270, 1800, 11250 }, 42, 9 },
-    { &game_str_tbl_st_jammer[9], { 55, 110, 220, 900 }, { 55, 110, 220, 900 }, { 50, 285, 1900, 11875 }, 47, 10 }
-};
+let tbl_shiptech_jammer = [|
+  mk_jammer "NONE"        [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;
+  mk_jammer "JAMMER I"    [ 10; 20; 40; 170 ] [ 10; 20; 40; 170 ] [ 25; 150; 1000; 6250 ] 2 1;
+  mk_jammer "JAMMER II"   [ 15; 30; 60; 250 ] [ 15; 30; 60; 250 ] [ 27; 165; 1100; 6875 ] 7 2;
+  mk_jammer "JAMMER III"  [ 20; 40; 80; 330 ] [ 20; 40; 80; 330 ] [ 30; 180; 1200; 7500 ] 12 3;
+  mk_jammer "JAMMER IV"   [ 25; 50; 100; 410 ] [ 25; 50; 100; 410 ] [ 32; 195; 1300; 8125 ] 17 4;
+  mk_jammer "JAMMER V"    [ 30; 60; 120; 490 ] [ 30; 60; 120; 490 ] [ 35; 210; 1400; 8750 ] 22 5;
+  mk_jammer "JAMMER VI"   [ 35; 70; 140; 570 ] [ 35; 70; 140; 570 ] [ 37; 225; 1500; 9375 ] 27 6;
+  mk_jammer "JAMMER VII"  [ 40; 80; 160; 650 ] [ 40; 80; 160; 650 ] [ 40; 240; 1600; 10000 ] 32 7;
+  mk_jammer "JAMMER VIII" [ 45; 90; 180; 730 ] [ 45; 90; 180; 730 ] [ 42; 255; 1700; 10625 ] 37 8;
+  mk_jammer "JAMMER IX"   [ 50; 100; 200; 810 ] [ 50; 100; 200; 810 ] [ 45; 270; 1800; 11250 ] 42 9;
+  mk_jammer "JAMMER X"    [ 55; 110; 220; 900 ] [ 55; 110; 220; 900 ] [ 50; 285; 1900; 11875 ] 47 10;
+|]
 
-struct shiptech_special_s tbl_shiptech_special[SHIP_SPECIAL_NUM] = {
-    { /* NONE */
-        &game_str_st_none, &strempty,
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 },
-        { 0, 0, 0, 0 },
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* RESERVE FUEL TANKS */
-        &game_str_tbl_st_special[0], &game_str_tbl_st_specialx[0],
-        { 20, 100, 500, 2500 },
-        { 20, 100, 500, 2500 },
-        { 0, 0, 0, 0 },
-        TECH_CONS_RESERVE_FUEL_TANKS, TECH_FIELD_CONSTRUCTION, 1,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* STANDARD COLONY BASE */
-        &game_str_tbl_st_special[1], &game_str_tbl_st_specialx[1],
-        { 3500, 3500, 3500, 3500 },
-        { 700, 700, 700, 700 },
-        { 0, 0, 0, 0 },
-        TECH_PLAN_ECOLOGICAL_RESTORATION, TECH_FIELD_PLANETOLOGY, 2,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* BARREN COLONY BASE */
-        &game_str_tbl_st_special[2], &game_str_tbl_st_specialx[2],
-        { 3750, 3750, 3750, 3750 },
-        { 700, 700, 700, 700 },
-        { 0, 0, 0, 0 },
-        TECH_PLAN_CONTROLLED_BARREN_ENVIRONMENT, TECH_FIELD_PLANETOLOGY, 2,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* TUNDRA COLONY BASE */
-        &game_str_tbl_st_special[3], &game_str_tbl_st_specialx[3],
-        { 4000, 4000, 4000, 4000 },
-        { 700, 700, 700, 700 },
-        { 0, 0, 0, 0 },
-        TECH_PLAN_CONTROLLED_TUNDRA_ENVIRONMENT, TECH_FIELD_PLANETOLOGY, 2,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* DEAD COLONY BASE */
-        &game_str_tbl_st_special[4], &game_str_tbl_st_specialx[4],
-        { 4250, 4250, 4250, 4250 },
-        { 700, 700, 700, 700 },
-        { 0, 0, 0, 0 },
-        TECH_PLAN_CONTROLLED_DEAD_ENVIRONMENT, TECH_FIELD_PLANETOLOGY, 2,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* INFERNO COLONY BASE */
-        &game_str_tbl_st_special[5], &game_str_tbl_st_specialx[5],
-        { 4500, 4500, 4500, 4500 },
-        { 700, 700, 700, 700 },
-        { 0, 0, 0, 0 },
-        TECH_PLAN_CONTROLLED_INFERNO_ENVIRONMENT, TECH_FIELD_PLANETOLOGY, 2,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* TOXIC COLONY BASE */
-        &game_str_tbl_st_special[6], &game_str_tbl_st_specialx[6],
-        { 4750, 4750, 4750, 4750 },
-        { 700, 700, 700, 700 },
-        { 0, 0, 0, 0 },
-        TECH_PLAN_CONTROLLED_TOXIC_ENVIRONMENT, TECH_FIELD_PLANETOLOGY, 2,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* RADIATED COLONY BASE */
-        &game_str_tbl_st_special[7], &game_str_tbl_st_specialx[7],
-        { 5000, 5000, 5000, 5000 },
-        { 700, 700, 700, 700 },
-        { 0, 0, 0, 0 },
-        TECH_PLAN_CONTROLLED_RADIATED_ENVIRONMENT, TECH_FIELD_PLANETOLOGY, 2,
-        0, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* BATTLE SCANNER */
-        &game_str_tbl_st_special[8], &game_str_tbl_st_specialx[8],
-        { 300, 300, 300, 300 },
-        { 50, 50, 50, 50 },
-        { 50, 50, 50, 50 },
-        TECH_COMP_BATTLE_SCANNER, TECH_FIELD_COMPUTER, 3,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_SCANNER)
-    },
-    { /* ANTI-MISSILE ROCKETS */
-        &game_str_tbl_st_special[9], &game_str_tbl_st_specialx[9],
-        { 100, 100, 100, 100 },
-        { 2, 10, 50, 250 },
-        { 8, 40, 200, 1000 },
-        TECH_WEAP_ANTI_MISSILE_ROCKETS, TECH_FIELD_WEAPON, 4,
-        0, 0, 40, 0, 0, 0,
-        0
-    },
-    { /* REPULSOR BEAM */
-        &game_str_tbl_st_special[10], &game_str_tbl_st_specialx[10],
-        { 550, 550, 550, 550 },
-        { 100, 100, 100, 100 },
-        { 200, 200, 200, 200 },
-        TECH_FFLD_REPULSOR_BEAM, TECH_FIELD_FORCE_FIELD, 5,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_REPULSOR)
-    },
-    { /* WARP DISSIPATOR */
-        &game_str_tbl_st_special[11], &game_str_tbl_st_specialx[11],
-        { 650, 650, 650, 650 },
-        { 100, 100, 100, 100 },
-        { 300, 300, 300, 300 },
-        TECH_PROP_WARP_DISSIPATOR, TECH_FIELD_PROPULSION, 6,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_WARPDIS)
-    },
-    { /* ENERGY PULSAR */
-        &game_str_tbl_st_special[12], &game_str_tbl_st_specialx[12],
-        { 750, 750, 750, 750 },
-        { 150, 150, 150, 150 },
-        { 250, 250, 250, 250 },
-        TECH_PROP_ENERGY_PULSAR, TECH_FIELD_PROPULSION, 7,
-        0, 0, 0, 0, 1, 0,
-        0
-    },
-    { /* INERTIAL STABILIZER */
-        &game_str_tbl_st_special[13], &game_str_tbl_st_specialx[13],
-        { 20, 75, 500, 2700 },
-        { 4, 20, 100, 500 },
-        { 8, 40, 200, 1000 },
-        TECH_PROP_INERTIAL_STABILIZER, TECH_FIELD_PROPULSION, 8,
-        0, 2, 0, 0, 0, 0,
-        0
-    },
-    { /* ZYRO SHIELD */
-        &game_str_tbl_st_special[14], &game_str_tbl_st_specialx[14],
-        { 50, 100, 200, 300 },
-        { 4, 20, 100, 500 },
-        { 12, 60, 300, 1500 },
-        TECH_FFLD_ZYRO_SHIELD, TECH_FIELD_FORCE_FIELD, 4,
-        0, 0, 75, 0, 0, 0,
-        0
-    },
-    { /* AUTOMATED REPAIR */
-        &game_str_tbl_st_special[15], &game_str_tbl_st_specialx[15],
-        { 2, 8, 50, 300 },
-        { 3, 15, 100, 600 },
-        { 3, 10, 50, 300 },
-        TECH_CONS_AUTOMATED_REPAIR_SYSTEM, TECH_FIELD_CONSTRUCTION, 9,
-        15, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* STASIS FIELD */
-        &game_str_tbl_st_special[16], &game_str_tbl_st_specialx[16],
-        { 2500, 2500, 2500, 2500 },
-        { 200, 200, 200, 200 },
-        { 275, 275, 275, 275 },
-        TECH_FFLD_STASIS_FIELD, TECH_FIELD_FORCE_FIELD, 10,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_STASIS)
-    },
-    { /* CLOAKING DEVICE */
-        &game_str_tbl_st_special[17], &game_str_tbl_st_specialx[17],
-        { 30, 150, 750, 3750 },
-        { 5, 25, 120, 600 },
-        { 10, 50, 250, 1250 },
-        TECH_FFLD_CLOAKING_DEVICE, TECH_FIELD_FORCE_FIELD, 11,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_CLOAK)
-    },
-    { /* ION STREAM PROJECTOR */
-        &game_str_tbl_st_special[18], &game_str_tbl_st_specialx[18],
-        { 1000, 1000, 1000, 1000 },
-        { 250, 250, 250, 250 },
-        { 500, 500, 500, 500 },
-        TECH_WEAP_ION_STREAM_PROJECTOR, TECH_FIELD_WEAPON, 12,
-        0, 0, 0, 0, 0, 1,
-        0
-    },
-    { /* HIGH ENERGY FOCUS */
-        &game_str_tbl_st_special[19], &game_str_tbl_st_specialx[19],
-        { 30, 135, 625, 3500 },
-        { 35, 100, 150, 500 },
-        { 65, 200, 350, 1000 },
-        TECH_PROP_HIGH_ENERGY_FOCUS, TECH_FIELD_PROPULSION, 13,
-        0, 0, 0, 3, 0, 0,
-        0
-    },
-    { /* IONIC PULSAR */
-        &game_str_tbl_st_special[20], &game_str_tbl_st_specialx[20],
-        { 1500, 1500, 1500, 1500 },
-        { 400, 400, 400, 400 },
-        { 750, 750, 750, 750 },
-        TECH_PROP_IONIC_PULSAR, TECH_FIELD_PROPULSION, 7,
-        0, 0, 0, 0, 2, 0,
-        0
-    },
-    { /* BLACK HOLE GENERATOR */
-        &game_str_tbl_st_special[21], &game_str_tbl_st_specialx[21],
-        { 2750, 2750, 2750, 2750 },
-        { 750, 750, 750, 750 },
-        { 750, 750, 750, 750 },
-        TECH_FFLD_BLACK_HOLE_GENERATOR, TECH_FIELD_FORCE_FIELD, 14,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_BLACKHOLE)
-    },
-    { /* SUB SPACE TELEPORTER */
-        &game_str_tbl_st_special[22], &game_str_tbl_st_specialx[22],
-        { 25, 100, 450, 2250 },
-        { 4, 20, 100, 500 },
-        { 16, 80, 400, 2000 },
-        TECH_PROP_SUB_SPACE_TELEPORTER, TECH_FIELD_PROPULSION, 15,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_SUBSPACE)
-    },
-    { /* LIGHTNING SHIELD */
-        &game_str_tbl_st_special[23], &game_str_tbl_st_specialx[23],
-        { 200, 300, 400, 500 },
-        { 6, 30, 150, 750 },
-        { 15, 70, 350, 1750 },
-        TECH_FFLD_LIGHTNING_SHIELD, TECH_FIELD_FORCE_FIELD, 4,
-        0, 0, 100, 0, 0, 0,
-        0
-    },
-    { /* NEUTRON STREAM PROJECTOR */
-        &game_str_tbl_st_special[24], &game_str_tbl_st_specialx[24],
-        { 2000, 2000, 2000, 2000 },
-        { 500, 500, 500, 500 },
-        { 1250, 1250, 1250, 1250 },
-        TECH_WEAP_NEUTRON_STREAM_PROJECTOR, TECH_FIELD_WEAPON, 16,
-        0, 0, 0, 0, 0, 2,
-        0
-    },
-    { /* ADV DAMAGE CONTROL */
-        &game_str_tbl_st_special[25], &game_str_tbl_st_specialx[25],
-        { 40, 200, 1000, 5000 },
-        { 9, 45, 300, 1800 },
-        { 9, 30, 150, 450 },
-        TECH_CONS_ADVANCED_DAMAGE_CONTROL, TECH_FIELD_CONSTRUCTION, 9,
-        30, 0, 0, 0, 0, 0,
-        0
-    },
-    { /* TECHNOLOGY NULLIFIER */
-        &game_str_tbl_st_special[26], &game_str_tbl_st_specialx[26],
-        { 3000, 3000, 3000, 3000 },
-        { 750, 750, 750, 750 },
-        { 1000, 1000, 1000, 1000 },
-        TECH_COMP_TECHNOLOGY_NULLIFIER, TECH_FIELD_COMPUTER, 17,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_TECHNULL)
-    },
-    { /* INERTIAL NULLIFIER */
-        &game_str_tbl_st_special[27], &game_str_tbl_st_specialx[27],
-        { 60, 200, 1500, 5000 },
-        { 6, 30, 150, 750 },
-        { 12, 60, 300, 1500 },
-        TECH_PROP_INERTIAL_NULLIFIER, TECH_FIELD_PROPULSION, 8,
-        0, 4, 0, 0, 0, 0,
-        0
-    },
-    { /* ORACLE INTERFACE */
-        &game_str_tbl_st_special[28], &game_str_tbl_st_specialx[28],
-        { 30, 150, 600, 2750 },
-        { 8, 40, 200, 1000 },
-        { 12, 60, 300, 1500 },
-        TECH_COMP_ORACLE_INTERFACE, TECH_FIELD_COMPUTER, 20,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_ORACLE)
-    },
-    { /* DISPLACMENT DEVICE */
-        &game_str_tbl_st_special[29], &game_str_tbl_st_specialx[29],
-        { 30, 150, 300, 2750 },
-        { 10, 50, 225, 1250 },
-        { 10, 50, 225, 1250 },
-        TECH_PROP_DISPLACEMENT_DEVICE, TECH_FIELD_PROPULSION, 21,
-        0, 0, 0, 0, 0, 0,
-        (1 << SHIP_SPECIAL_BOOL_DISP)
-    }
-};
 
-struct shiptech_hull_s tbl_shiptech_hull[SHIP_HULL_NUM] = {
-    { &game_str_tbl_st_hull[0], 60, 40, 3, 2, 2 },
-    { &game_str_tbl_st_hull[1], 360, 200, 18, 15, 1 },
-    { &game_str_tbl_st_hull[2], 2000, 1000, 100, 100, 0 },
-    { &game_str_tbl_st_hull[3], 12000, 5000, 600, 700, -1 }
-};
-*)
+let tbl_shiptech_hull = [|
+  mk_hull "SMALL" 60 40 3 2 2;
+  mk_hull "MEDIUM" 360 200 18 15 1;
+  mk_hull "LARGE" 2000 1000 100 100 0;
+  mk_hull "HUGE" 12000 5000 600 700 (-1);
+|]
 
+let tbl_shiptech_special = [|
+    mk_special "NONE" ""
+        [ 0; 0; 0; 0 ]
+        [ 0; 0; 0; 0 ]
+        [ 0; 0; 0; 0 ]
+        0 Tech_field_construction 0
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "RESERVE FUEL TANKS" "EXTENDS SHIP RANGE BY 3 PARSECS"
+        [ 20; 100; 500; 2500 ]
+        [ 20; 100; 500; 2500 ]
+        [ 0; 0; 0; 0 ]
+        (tech_cons_to_enum Tech_cons_reserve_fuel_tanks) Tech_field_construction 1
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "STANDARD COLONY BASE" "ALLOWS NORMAL PLANET LANDINGS"
+        [ 3500; 3500; 3500; 3500 ]
+        [ 700; 700; 700; 700 ]
+        [ 0; 0; 0; 0 ]
+        (tech_plan_to_enum Tech_plan_ecological_restoration) Tech_field_planetology 2
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "BARREN COLONY BASE" "ALLOWS BARREN PLANET LANDINGS"
+        [ 3750; 3750; 3750; 3750 ]
+        [ 700; 700; 700; 700 ]
+        [ 0; 0; 0; 0 ]
+        (tech_plan_to_enum Tech_plan_controlled_barren_environment) Tech_field_planetology 2
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "TUNDRA COLONY BASE" "ALLOWS TUNDRA PLANET LANDINGS"
+        [ 4000; 4000; 4000; 4000 ]
+        [ 700; 700; 700; 700 ]
+        [ 0; 0; 0; 0 ]
+        (tech_plan_to_enum Tech_plan_controlled_tundra_environment) Tech_field_planetology 2
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "DEAD COLONY BASE" "ALLOWS DEAD PLANET LANDINGS"
+        [ 4250; 4250; 4250; 4250 ]
+        [ 700; 700; 700; 700 ]
+        [ 0; 0; 0; 0 ]
+        (tech_plan_to_enum Tech_plan_controlled_dead_environment) Tech_field_planetology 2
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "INFERNO COLONY BASE" "ALLOWS INFERNO PLANET LANDINGS"
+        [ 4500; 4500; 4500; 4500 ]
+        [ 700; 700; 700; 700 ]
+        [ 0; 0; 0; 0 ]
+        (tech_plan_to_enum Tech_plan_controlled_inferno_environment) Tech_field_planetology 2
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "TOXIC COLONY BASE" "ALLOWS TOXIC PLANET LANDINGS"
+        [ 4750; 4750; 4750; 4750 ]
+        [ 700; 700; 700; 700 ]
+        [ 0; 0; 0; 0 ]
+        (tech_plan_to_enum Tech_plan_controlled_toxic_environment) Tech_field_planetology 2
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "RADIATED COLONY BASE" "ALLOWS RADIATED PLANET LANDINGS"
+        [ 5000; 5000; 5000; 5000 ]
+        [ 700; 700; 700; 700 ]
+        [ 0; 0; 0; 0 ]
+        (tech_plan_to_enum Tech_plan_controlled_radiated_environment) Tech_field_planetology 2
+        0 0 0 0 0 0
+        0
+    ;
+    mk_special "BATTLE SCANNER" "DISPLAYS ENEMY SHIP STATS"
+        [ 300; 300; 300; 300 ]
+        [ 50; 50; 50; 50 ]
+        [ 50; 50; 50; 50 ]
+        (tech_comp_to_enum Tech_comp_battle_scanner) Tech_field_computer 3
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_scanner))
+    ;
+    mk_special "ANTI-MISSILE ROCKETS" "40% CHANCE MISSILES DESTROYED"
+        [ 100; 100; 100; 100 ]
+        [ 2; 10; 50; 250 ]
+        [ 8; 40; 200; 1000 ]
+        (tech_weap_to_enum Tech_weap_anti_missile_rockets) Tech_field_weapon 4
+        0 0 40 0 0 0
+        0
+    ;
+    mk_special "REPULSOR BEAM" "MOVES ENEMY SHIPS BACK 1 SPACE"
+        [ 550; 550; 550; 550 ]
+        [ 100; 100; 100; 100 ]
+        [ 200; 200; 200; 200 ]
+        (tech_ffld_to_enum Tech_ffld_repulsor_beam) Tech_field_force_field 5
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_repulsor))
+    ;
+    mk_special "WARP DISSIPATOR" "REDUCES SPEED OF ENEMY SHIPS"
+        [ 650; 650; 650; 650 ]
+        [ 100; 100; 100; 100 ]
+        [ 300; 300; 300; 300 ]
+        (tech_prop_to_enum Tech_prop_warp_dissipator) Tech_field_propulsion 6
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_warpdis))
+    ;
+    mk_special "ENERGY PULSAR" "EXPANDS TO INFLICT 1-5 HITS"
+        [ 750; 750; 750; 750 ]
+        [ 150; 150; 150; 150 ]
+        [ 250; 250; 250; 250 ]
+        (tech_prop_to_enum Tech_prop_energy_pulsar) Tech_field_propulsion 7
+        0 0 0 0 1 0
+        0
+    ;
+    mk_special "INERTIAL STABILIZER" "ADDS +2 TO MANEUVERABILITY"
+        [ 20; 75; 500; 2700 ]
+        [ 4; 20; 100; 500 ]
+        [ 8; 40; 200; 1000 ]
+        (tech_prop_to_enum Tech_prop_inertial_stabilizer) Tech_field_propulsion 8
+        0 2 0 0 0 0
+        0
+    ;
+    mk_special "ZYRO SHIELD" "75% CHANCE MISSILES DESTROYED"
+        [ 50; 100; 200; 300 ]
+        [ 4; 20; 100; 500 ]
+        [ 12; 60; 300; 1500 ]
+        (tech_ffld_to_enum Tech_ffld_zyro_shield) Tech_field_force_field 4
+        0 0 75 0 0 0
+        0
+    ;
+    mk_special "AUTOMATED REPAIR" "HEALS 15% OF SHIP'S HITS A TURN"
+        [ 2; 8; 50; 300 ]
+        [ 3; 15; 100; 600 ]
+        [ 3; 10; 50; 300 ]
+        (tech_cons_to_enum Tech_cons_automated_repair_system) Tech_field_construction 9
+        15 0 0 0 0 0
+        0
+    ;
+    mk_special "STASIS FIELD" "ENEMY FROZEN FOR 1 TURN"
+        [ 2500; 2500; 2500; 2500 ]
+        [ 200; 200; 200; 200 ]
+        [ 275; 275; 275; 275 ]
+        (tech_ffld_to_enum Tech_ffld_stasis_field) Tech_field_force_field 10
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_stasis))
+    ;
+    mk_special "CLOAKING DEVICE" "RENDERS SHIPS NEARLY INVISIBLE"
+        [ 30; 150; 750; 3750 ]
+        [ 5; 25; 120; 600 ]
+        [ 10; 50; 250; 1250 ]
+        (tech_ffld_to_enum Tech_ffld_cloaking_device) Tech_field_force_field 11
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_cloak))
+    ;
+    mk_special "ION STREAM PROJECTOR" "REDUCES ENEMY ARMOR BY 20%"
+        [ 1000; 1000; 1000; 1000 ]
+        [ 250; 250; 250; 250 ]
+        [ 500; 500; 500; 500 ]
+        (tech_weap_to_enum Tech_weap_ion_stream_projector) Tech_field_weapon 12
+        0 0 0 0 0 1
+        0
+    ;
+    mk_special "HIGH ENERGY FOCUS" "INCREASES WEAPON RANGE BY 3"
+        [ 30; 135; 625; 3500 ]
+        [ 35; 100; 150; 500 ]
+        [ 65; 200; 350; 1000 ]
+        (tech_prop_to_enum Tech_prop_high_energy_focus) Tech_field_propulsion 13
+        0 0 0 3 0 0
+        0
+    ;
+    mk_special "IONIC PULSAR" "EXPANDS TO INFLICT 2-10 HITS"
+        [ 1500; 1500; 1500; 1500 ]
+        [ 400; 400; 400; 400 ]
+        [ 750; 750; 750; 750 ]
+        (tech_prop_to_enum Tech_prop_ionic_pulsar) Tech_field_propulsion 7
+        0 0 0 0 2 0
+        0
+    ;
+    mk_special "BLACK HOLE GENERATOR" "KILLS 25%-100% OF ENEMY SHIPS"
+        [ 2750; 2750; 2750; 2750 ]
+        [ 750; 750; 750; 750 ]
+        [ 750; 750; 750; 750 ]
+        (tech_ffld_to_enum Tech_ffld_black_hole_generator) Tech_field_force_field 14
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_blackhole))
+    ;
+    mk_special "SUB SPACE TELEPORTER" "TELEPORTS SHIP IN COMBAT"
+        [ 25; 100; 450; 2250 ]
+        [ 4; 20; 100; 500 ]
+        [ 16; 80; 400; 2000 ]
+        (tech_prop_to_enum Tech_prop_sub_space_teleporter) Tech_field_propulsion 15
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_subspace))
+    ;
+    mk_special "LIGHTNING SHIELD" "100% CHANCE MISSILES DESTROYED"
+        [ 200; 300; 400; 500 ]
+        [ 6; 30; 150; 750 ]
+        [ 15; 70; 350; 1750 ]
+        (tech_ffld_to_enum Tech_ffld_lightning_shield) Tech_field_force_field 4
+        0 0 100 0 0 0
+        0
+    ;
+    mk_special "NEUTRON STREAM PROJECTOR" "REDUCES ENEMY ARMOR BY 40%"
+        [ 2000; 2000; 2000; 2000 ]
+        [ 500; 500; 500; 500 ]
+        [ 1250; 1250; 1250; 1250 ]
+        (tech_weap_to_enum Tech_weap_neutron_stream_projector) Tech_field_weapon 16
+        0 0 0 0 0 2
+        0
+    ;
+    mk_special "ADV DAMAGE CONTROL" "HEALS 30% OF SHIP'S HITS A TURN"
+        [ 40; 200; 1000; 5000 ]
+        [ 9; 45; 300; 1800 ]
+        [ 9; 30; 150; 450 ]
+        (tech_cons_to_enum Tech_cons_advanced_damage_control) Tech_field_construction 9
+        30 0 0 0 0 0
+        0
+    ;
+    mk_special "TECHNOLOGY NULLIFIER" "DESTROYS ENEMY COMPUTERS"
+        [ 3000; 3000; 3000; 3000 ]
+        [ 750; 750; 750; 750 ]
+        [ 1000; 1000; 1000; 1000 ]
+        (tech_comp_to_enum Tech_comp_technology_nullifier) Tech_field_computer 17
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_technull))
+    ;
+    mk_special "INERTIAL NULLIFIER" "ADDS +4 TO MANEUVERABILITY"
+        [ 60; 200; 1500; 5000 ]
+        [ 6; 30; 150; 750 ]
+        [ 12; 60; 300; 1500 ]
+        (tech_prop_to_enum Tech_prop_inertial_nullifier) Tech_field_propulsion 8
+        0 4 0 0 0 0
+        0
+    ;
+    mk_special "ORACLE INTERFACE" "CONCENTRATES BEAM ATTACKS"
+        [ 30; 150; 600; 2750 ]
+        [ 8; 40; 200; 1000 ]
+        [ 12; 60; 300; 1500 ]
+        (tech_comp_to_enum Tech_comp_oracle_interface) Tech_field_computer 20
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_oracle))
+    ;
+    mk_special "DISPLACMENT DEVICE" "1/3 OF ALL ENEMY ATTACKS MISS"
+        [ 30; 150; 300; 2750 ]
+        [ 10; 50; 225; 1250 ]
+        [ 10; 50; 225; 1250 ]
+        (tech_prop_to_enum Tech_prop_displacement_device) Tech_field_propulsion 21
+        0 0 0 0 0 0
+        (1 lsl (ship_special_bool_to_enum Ship_special_bool_disp))
+    ;
+|]
 

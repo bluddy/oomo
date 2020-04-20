@@ -41,8 +41,19 @@ let get_base_cost_mod_armor g player percent =
   let mult = get_tech_reduce_50 percent in
   let armor = Shiptech.tbl_armor.(idx) in
   let cost =
-    ((Shiptech.armor_get_hull armor Ship_hull_large).cost +
+    ((Shiptech.get_armor_hull armor Ship_hull_large).cost +
     (Shiptech.hull_get Ship_hull_large).cost * mult) / 1500
   in
   cost
+
+let get_base_cost_mod_weap g tech_i percent =
+  let mult = get_tech_reduce_50 percent * 9 in
+  (Shiptech.tbl_weap.(tech_i).cost * mult) / 1000
+
+let get_base_cost_mod_shield g tech_i percent =
+  let mult = get_tech_reduce_50 percent in
+  let shield = Shiptech.tbl_shield.(tech_i) in
+  let hull_data = Shiptech.get_shield_hull shield Ship_hull_large in
+  (hull_data.cost * mult) / 1000 + hull_data.power / 10
+
 

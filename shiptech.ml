@@ -229,6 +229,8 @@ type shiptech_comp = {
   level: int;
 }
 
+let get_comp_hull comp hull = comp.shiphull.(ship_hull_to_enum hull)
+
 let mk_comp name power_l space_l cost_l tech_i level =
   let shiphull =
     Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
@@ -242,6 +244,8 @@ type shiptech_jammer = {
   tech_i: int;
   level: int;
 }
+
+let get_jammer_hull jammer hull = jammer.shiphull.(ship_hull_to_enum hull)
 
 let mk_jammer name power_l space_l cost_l tech_i level =
   let shiphull =
@@ -274,7 +278,7 @@ type shiptech_armor = {
   tech_i: int;
 }
 
-let armor_get_hull armor hull =
+let get_armor_hull armor hull =
   armor.shiphull.(ship_hull_to_enum hull)
 
 let mk_armor name cost_l space_l armor tech_i =
@@ -290,6 +294,8 @@ type shiptech_shield = {
   absorb: int;
   tech_i: int;
 }
+
+let get_shield_hull shield hull = shield.shiphull.(ship_hull_to_enum hull)
 
 let mk_shield name cost_l space_l power_l absorb tech_i =
   let shiphull =

@@ -18,10 +18,10 @@ type shipdesign = {
   space: int;
   hull: ship_hull;
   look: int;
-  weapon_info: weapon_info array;
+  weapon_info: weapon_info list;
   engine: ship_engine;
   engines: int;
-  special: ship_special array; (* special_slot_num *)
+  special: ship_special list; (* special_slot_num *)
   shield: ship_shield;
   jammer: ship_jammer;
   comp: ship_comp;
@@ -34,9 +34,8 @@ let mk_shipdesign name cost space hull look wpnt_l wpnn_l engine engines
   special_l shield jammer comp armor man hp =
     let weapon_info =
       List.map2 (fun wtype wnum -> {wtype; wnum}) wpnt_l wpnn_l
-      |> Array.of_list
     in
-    let special = Array.of_list special_l in
+    let special = special_l in
     {name; cost; space; hull; look; weapon_info; engine; engines;
     special; shield; jammer; comp; armor; man; hp}
 

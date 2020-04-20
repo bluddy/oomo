@@ -49,8 +49,8 @@ type ship_research_pership = {
 }
 
 type ship_research = {
-  research_list: int list; (* tech_field_num * tech_tier_num * 3 *)
-  research_complete: int list; (* tech_field_num * tech_per_field *)
+  research_list: int array; (* tech_field_num * tech_tier_num * 3 *)
+  research_complete: int array; (* tech_field_num * tech_per_field *)
   pership: ship_research_pership array;
 }
 

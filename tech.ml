@@ -37,7 +37,7 @@ let get_base_cost_mod_armor g player percent =
         if player_has_tech g Tech_field_construction ship_armor.tech_i player
         then i else acc)
   in
-  let idx = if idx > 0 then idx - 1 else 0 in (* bug? *)
+  let idx = if idx > 0 then idx - 1 else 0 in (* BUG? *)
   let mult = get_tech_reduce_50 percent in
   let armor = Shiptech.tbl_armor.(idx) in
   let cost1 = (Shiptech.get_armor_hull armor Ship_hull_large).cost in

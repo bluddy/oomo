@@ -114,7 +114,7 @@ type empire_tech_orbit = {
   trait2: trait2;
   ai_p3_countdown: int;
   ai_p2_countdown: int;
-  perplayer: empire_tech_orbit_perplayer;
+  perplayer: empire_tech_orbit_perplayer list;
   have_planet_shield: int; (* 0,5,10,15,20 *)
   planet_shield_cost: int;
   security:int; (* tenths *)
@@ -160,6 +160,15 @@ type empire_tech_orbit = {
   shipi_bomber: int;
 }
 
+let get_eto_contact_idxs eto =
+  (* Return list of contact idxs *)
+    List.fold_left (fun (i, acc) x ->
+      if x.contact then (i+1, i::acc)
+      else (i+1, acc))
+    (0, [])
+    eto.perplayer
+    |> snd
+
 let newtech_max = 15
 
 type monster = {
@@ -199,10 +208,10 @@ type newtechs = {
 let game_event_tbl_num = 20
 let help_shown_num = 16
 
-type events_player = {
+type events_perplayer = {
   home: int; (* planet index *)
   coup: bool;
-  newtech: newtechs;
+  mutable newtech: newtechs;
   new_ships: int list; (* num_shipdesigns *)
   build_finished_num: int;
   gov_eco_mode: governor_eco_mode;
@@ -230,7 +239,7 @@ type events_pair = {
 }
 
 type events = {
-  perplayer: events_player list;
+  perplayer: events_perplayer array;
   perpair: events_pair array array;
   year: int;
   gdone: bool list; (* game_event_tbl_num *)

@@ -1,3 +1,4 @@
+open Utils
 open Types
 open Techtypes
 
@@ -978,13 +979,7 @@ let tbl_armor = [|
   mk_armor "NEUTRONIUM II" [180; 900; 4500; 25000] [50; 175; 875; 4375] 600 50;
 |]
 
-let armor_foldi f ~init =
-  Array.fold_left (fun (i, acc) x ->
-    let acc' = f i acc x in
-    (i+1, acc'))
-    (0, init)
-    tbl_armor
-  |> snd
+let armor_foldi f ~init = array_foldi f ~init ~arr:tbl_armor
 
 let tbl_shield = [|
   mk_shield "NONE" [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;
@@ -1015,6 +1010,7 @@ let tbl_jammer = [|
   mk_jammer "JAMMER X"    [ 55; 110; 220; 900 ] [ 55; 110; 220; 900 ] [ 50; 285; 1900; 11875 ] 47 10;
 |]
 
+let jammer_foldi f ~init = array_foldi f ~init ~arr:tbl_jammer
 
 let tbl_hull = [|
   mk_hull "SMALL" 60 40 3 2 2;

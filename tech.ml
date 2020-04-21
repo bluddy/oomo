@@ -37,14 +37,12 @@ let get_base_cost_mod_armor g player percent =
         if player_has_tech g Tech_field_construction ship_armor.tech_i player
         then i else acc)
   in
-  let idx = if idx > 0 then idx - 1 else 0 in
+  let idx = if idx > 0 then idx - 1 else 0 in (* bug? *)
   let mult = get_tech_reduce_50 percent in
   let armor = Shiptech.tbl_armor.(idx) in
-  let cost =
-    ((Shiptech.get_armor_hull armor Ship_hull_large).cost +
-    (Shiptech.hull_get Ship_hull_large).cost * mult) / 1500
-  in
-  cost
+  let cost1 = (Shiptech.get_armor_hull armor Ship_hull_large).cost in
+  let cost2 = (Shiptech.hull_get Ship_hull_large).cost in
+  (cost1 + cost2) * mult / 1500
 
 let get_base_cost_mod_weap g tech_i percent =
   let mult = get_tech_reduce_50 percent * 9 in
@@ -55,5 +53,54 @@ let get_base_cost_mod_shield g tech_i percent =
   let shield = Shiptech.tbl_shield.(tech_i) in
   let hull_data = Shiptech.get_shield_hull shield Ship_hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
+
+let get_base_cost_mod_comp g tech_i percent =
+  let mult = get_tech_reduce_50 percent in
+  let comp = Shiptech.tbl_comp.(tech_i) in
+  let hull_data = Shiptech.get_comp_hull comp Ship_hull_large in
+  (hull_data.cost * mult) / 1000 + hull_data.power / 10
+
+let get_base_cost_mod_jammer g player percent =
+  let tech_i =
+    Shiptech.jammer_foldi ~init:0
+      (fun i acc jammer ->
+        if player_has_tech g Tech_field_computer jammer.tech_i player then i
+        else acc)
+  in
+  let mult = get_tech_reduce_50 percent in
+  let jammer = Shiptech.tbl_jammer.(tech_i) in
+  let hull_data = Shiptech.get_jammer_hull jammer Ship_hull_large in
+  (hull_data.cost * mult) / 1000 + hull_data.power / 10
+
+let add_newtech g player field tech source a8 stolen_from frame =
+  let ev_player = g.evn.perplayer.(player) in
+  let num = ev_player.newtech.num in
+  if num < newtech_max then begin
+    let frame = match source with
+      | Techsource_spy -> frame
+      | _ -> false
+    in
+    let other1, other2, frame =
+      if frame then
+        (* If we're framing, find 2 other races the victrim is at contact with
+        * (not the originator) and place them in other1, other2.
+        * For some reason, we *have* to have 2 others, or it doesn't work. BUG? *)
+        let eto = g.perplayer.(stolen_from).eto in
+        match get_eto_contact_idxs eto with
+        | x::y::zs when x <> player && y <> player -> x, y, frame
+        | _ -> Player.none, Player.none, false
+      else
+        Player.none, Player.none, false
+    in
+    let add =
+      {field; tech; source; v06=a8; stolen_from; other1; other2; frame}
+    in
+    let n = ev_player.newtech in
+    ev_player.newtech <- {n with d = add::n.d; num = n.num + 1}
+  end
+
+
+
+
 
 

@@ -1,6 +1,7 @@
 
 module Player = struct
   type t = int
+  let none = -1
 end
 
 type tech_field =
@@ -61,9 +62,9 @@ type governor_eco_mode =
   | Buildup_mil | Buildup_full | Auto_tech
 
 type techsource =
-  | TS_research | TS_spy | TS_found | TS_AI_spy | TS_trade
+  | Techsource_research | Techsource_spy | Techsource_found | Techsource_AI_spy | Techsource_trade
 
-let techsource_choose = TS_AI_spy
+let techsource_choose = Techsource_AI_spy
 
 let ship_name_num = 12
 let num_shipdesigns = 6

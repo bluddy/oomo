@@ -1,8 +1,41 @@
 
-module Player = struct
+module type Player_t = sig
+  type t
+  val to_int: t -> int
+  val of_int: int -> t
+  val none: t
+  val eq: t -> t -> bool
+end
+
+module Player : Player_t = struct
   type t = int
   let none = -1
+  let to_int x : int = x
+  let of_int x : t = x
+  let eq x y = to_int x = to_int y
 end
+
+module type Tech_t = sig
+  type t
+  val to_int: t -> int
+  val of_int: int -> t
+  val compare: t -> t -> int
+  val eq: t -> t -> bool
+end
+
+module Tech : Tech_t = struct
+  type t = int
+  let to_int x : int = x
+  let of_int x : t = x
+  let compare x y = (to_int x) - (to_int y)
+  let eq x y = (to_int x) = (to_int y)
+end
+
+module TechSet = Set.Make(Tech)
+
+let get_max_tech ts = match TechSet.max_elt_opt ts with
+  | Some x -> x
+  | None -> Tech.of_int 0
 
 type tech_field =
   | Tech_field_computer | Tech_field_construction | Tech_field_force_field
@@ -16,6 +49,7 @@ type race =
   | Sakkra | Psilon | Alkari
   | Klackon | Bulrathi | Meklar
   | Darlok
+  [@@ deriving enum]
 
 type banner =
   | Blue | Green | Purple | Red | White | Yellow

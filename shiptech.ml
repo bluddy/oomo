@@ -201,7 +201,7 @@ type st_weapon = {
   space: int;
   power: int;
   is_bio: bool;
-  tech_i: int;
+  tech_i: Tech.t;
   v24: int; (* beam? missile: fuel *)
   dtbl: int list; (* beam: color table; missile: 0=speed *)
   sound: int;
@@ -212,6 +212,7 @@ let mk_weapon name extra_text damage_min damage_max range
     extra_acc halve_shield is_bomb damage_fade miss_type damage_mul
     numfire numshots cost space power is_bio tech_i v24
     dtbl sound nummiss =
+      let tech_i = Tech.of_int tech_i in
       {name; extra_text; damage_min; damage_max; range;
     extra_acc; halve_shield; is_bomb; damage_fade; miss_type; damage_mul;
     numfire; numshots; cost; space; power; is_bio; tech_i; v24;
@@ -226,7 +227,7 @@ type per_ship_hull = {
 type shiptech_comp = {
   name: string;
   shiphull: per_ship_hull array; (* ship_hull_num *)
-  tech_i: int;
+  tech_i: Tech.t;
   level: int;
 }
 
@@ -237,12 +238,13 @@ let mk_comp name power_l space_l cost_l tech_i level =
     Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
     |> Array.of_list
   in
+  let tech_i = Tech.of_int tech_i in
   {name; tech_i; shiphull; level}
 
 type shiptech_jammer = {
   name: string;
   shiphull: per_ship_hull array; (* ship_hull_num *)
-  tech_i: int;
+  tech_i: Tech.t;
   level: int;
 }
 
@@ -253,6 +255,7 @@ let mk_jammer name power_l space_l cost_l tech_i level =
     Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
     |> Array.of_list
   in
+  let tech_i = Tech.of_int tech_i in
   {name; shiphull; tech_i; level}
 
 type shiptech_engine = {
@@ -261,10 +264,11 @@ type shiptech_engine = {
   space: int;
   cost: int;
   warp: int;
-  tech_i: int;
+  tech_i: Tech.t;
 }
 
 let mk_engine name power space cost warp tech_i : shiptech_engine =
+  let tech_i = Tech.of_int tech_i in
   {name; power; space; cost; warp; tech_i}
 
 type armor_per_ship_hull = {
@@ -276,7 +280,7 @@ type shiptech_armor = {
   name: string;
   shiphull: armor_per_ship_hull array;
   armor: int;
-  tech_i: int;
+  tech_i: Tech.t;
 }
 
 let get_armor_hull armor hull =
@@ -287,18 +291,20 @@ let mk_armor name cost_l space_l armor tech_i =
     List.map2 (fun cost space -> {cost; space}) cost_l space_l
     |> Array.of_list
   in
+  let tech_i = Tech.of_int tech_i in
   {name; shiphull; armor; tech_i}
 
 type shiptech_shield = {
   name: string;
   shiphull: per_ship_hull array;
   absorb: int;
-  tech_i: int;
+  tech_i: Tech.t;
 }
 
 let get_shield_hull shield hull = shield.shiphull.(ship_hull_to_enum hull)
 
 let mk_shield name cost_l space_l power_l absorb tech_i =
+  let tech_i = Tech.of_int tech_i in
   let shiphull =
     Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
     |> Array.of_list
@@ -323,7 +329,7 @@ type shiptech_special = {
   name: string;
   extra_str: string;
   shiphull: per_ship_hull array;
-  tech_i: int;
+  tech_i: Tech.t;
   field: tech_field;
   stype: int;
   repair: int;
@@ -341,6 +347,7 @@ let mk_special name extra_str cost_l space_l power_l tech_i field stype repair
     Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
     |> Array.of_list
   in
+  let tech_i = Tech.of_int tech_i in
   {name; extra_str; shiphull; tech_i; field; stype; repair; extraman; misshield; extrarange;
   pulsar; stream; boolmask}
 

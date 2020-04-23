@@ -28,7 +28,7 @@ let get_tech_reduce_50 percent (* 1..100 *) =
 let player_has_tech g field tech player =
   let srd = get_srd g player in
   let research = research_completed_of_field srd field in
-  IntSet.mem tech research
+  TechSet.mem tech research
 
 let get_base_cost_mod_armor g player percent =
   let idx =
@@ -73,7 +73,7 @@ let get_base_cost_mod_jammer g player percent =
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
 let add_newtech g player field tech source a8 stolen_from frame =
-  let ev_player = g.evn.perplayer.(player) in
+  let ev_player = get_events_perplayer g player in
   let num = ev_player.newtech.num in
   if num < newtech_max then begin
     let frame = match source with
@@ -85,9 +85,9 @@ let add_newtech g player field tech source a8 stolen_from frame =
         (* If we're framing, find 2 other races the victrim is at contact with
         * (not the originator) and place them in other1, other2.
         * For some reason, we *have* to have 2 others, or it doesn't work. BUG? *)
-        let eto = g.perplayer.(stolen_from).eto in
+        let eto = get_eto g stolen_from in
         match get_eto_contact_idxs eto with
-        | x::y::zs when x <> player && y <> player -> x, y, frame
+        | x::y::zs when not (Player.eq x player) && not (Player.eq y player) -> x, y, frame
         | _ -> Player.none, Player.none, false
       else
         Player.none, Player.none, false
@@ -101,12 +101,10 @@ let add_newtech g player field tech source a8 stolen_from frame =
 
 let get_next_techs g player field tbl =
   let srd = get_srd g player in
+  let eto = get_eto g player in
   let rcomplete = research_completed_of_field srd field in
-  let len = IntSet.cardinal rcomplete in (* NOTE: do this differently, not using eto *)
-  let tmax = match IntSet.max_elt_opt rcomplete with
-    | Some x -> x
-    | None -> 0
-  in
+  let len = (get_techdata_of_field eto field).completed in
+  let tmax = Tech.to_int @@ get_max_tech rcomplete in
   let maxtier = match len with
     | 1 -> 1
     | _ ->
@@ -118,7 +116,7 @@ let get_next_techs g player field tbl =
   let num, techs =
     Array_slice.fold (fun (num, acc) l ->
       List.fold_left (fun (num, acc) tech ->
-        if (not @@ IntSet.mem tech rcomplete) && num < tech_next_max then
+        if (not @@ TechSet.mem tech rcomplete) && num < tech_next_max then
              (num + 1, tech::acc)
         else
              (num, acc)
@@ -140,8 +138,9 @@ let get_next_techs g player field tbl =
       OSeq.fold_while (fun (num, acc) tech ->
         if tech > tmax || num >= tech_next_max then (num, acc), `Stop
         else
+          let tech = Tech.of_int tech in
           let num, acc =
-            if not @@ IntSet.mem tech rcomplete then
+            if not @@ TechSet.mem tech rcomplete then
               (num+1, tech::acc)
             else
               num, acc
@@ -153,6 +152,16 @@ let get_next_techs g player field tbl =
   | _ ->
       num, techs
 
+let get_next_rp g player field tech =
+  let cost = tech * tech in
+  let eto = get_eto g player in
+  let cost = cost * Num.get_tech_costmulr race field in
+  0
+
+let start_next g player field tech =
+  let eto = get_eto g player in
+  let techdata = 0 in
+  0
 
 
 

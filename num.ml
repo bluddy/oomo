@@ -75,6 +75,11 @@ let num_tech_costmulr = [|
     [| 80; 100; 100; 100; 100; 100 |]
 |]
 
+let get_tech_costmulr race field =
+  let race = race_to_enum race in
+  let field = tech_field_to_enum field in
+  num_tech_costmulr.(race).(field)
+
 
 (* Different fields and 50 numbers for techs *)
 let numt_cm = [| 0; 0; 0; 0; 0; 0; 0; 0; 4; 0; 0; 0; 0; 0; 0; 0; 0; 0; 4; 0; 0; 0; 0; 0; 0; 0; 0; 0; 4; 0; 0; 0; 0; 0; 0; 0; 0; 0; 4; 0; 0; 0; 0; 0; 0; 0; 0; 0; 4; 0; 0 |]

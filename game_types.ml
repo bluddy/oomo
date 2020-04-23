@@ -28,14 +28,14 @@ type fleet_orbit = {
   ships: int list; (* NUM_SHIPDESIGNS *)
 }
 
-type techdata = {
-  percent: int list; (* TECH_FIELD_NUM, tech level % *)
-  slider: int list; (* TECH_FIELD_NUM *)
-  slider_lock: bool list; (* TECH_FIELD_NUM *)
-  investment: int list; (* TECH_FIELD_NUM *)
-  project: int list; (* TECH_FIELD_NUM *)
-  cost: int list; (* TECH_FIELD_NUM *)
-  completed: int list; (* TECH_FIELD_NUM *) (* num of completed projects, len of srd[i].researchcompleted *)
+type techdata_perfield = {
+  percent: int; (* tech level % *)
+  slider: int;
+  slider_lock: bool;
+  investment: int;
+  project: int;
+  cost: int;
+  completed: int; (* num of completed projects, len of srd[i].researchcompleted *)
 }
 
 let tech_tier_num = 10
@@ -50,8 +50,8 @@ type ship_research_pership = {
 }
 
 type ship_research_perfield = {
-  research_list: int list array; (* tech_tier_num * 3 *)
-  research_completed: IntSet.t; (* different from C *)
+  research_list: Tech.t list array; (* tech_tier_num * 3 *)
+  research_completed: TechSet.t; (* different from C *)
 }
 
 type ship_research = {
@@ -159,7 +159,7 @@ type empire_tech_orbit = {
   ind_waste_scale: int; (* 0, 2, ... 10 *)
   fuel_range: int; (* 3..10, 30 *)
   have_combat_transporter: bool;
-  tech: techdata;
+  tech: techdata_perfield array; (* NUM_FIELDS *)
   have_engine: int; (* 1.. *)
   shipdesigns_num: int;
   orbit: fleet_orbit list; (* PLANETS_MAX *)
@@ -170,11 +170,13 @@ type empire_tech_orbit = {
 let get_eto_contact_idxs eto =
   (* Return list of contact idxs *)
     List.fold_left (fun (i, acc) x ->
-      if x.contact then (i+1, i::acc)
+      if x.contact then (i+1, (Player.of_int i)::acc)
       else (i+1, acc))
     (0, [])
     eto.perplayer
     |> snd
+
+let get_techdata_of_field eto field = eto.tech.(tech_field_to_enum field)
 
 let newtech_max = 15
 
@@ -190,7 +192,7 @@ type monster = {
 
 type newtech = {
   field: tech_field;
-  tech: int;
+  tech: Tech.t;
   source: techsource;
   v06: int;
   stolen_from: Player.t;
@@ -361,7 +363,9 @@ type t = {
     planet: Planet.t array; (* planets_max *)
     enroute: fleet_enroute array; (* fleet_enroute_max *)
     transport: transport array; (* transport_max *)
-    evn: events;
+    events: events;
 }
 
-let get_srd g player = g.perplayer.(player).srd
+let get_srd g player = g.perplayer.(Player.to_int player).srd
+let get_eto g player = g.perplayer.(Player.to_int player).eto
+let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)

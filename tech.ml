@@ -99,6 +99,64 @@ let add_newtech g player field tech source a8 stolen_from frame =
     ev_player.newtech <- {n with d = add::n.d; num = n.num + 1}
   end
 
+let get_next_techs g player field tbl =
+  let srd = get_srd g player in
+  let rcomplete = research_completed_of_field srd field in
+  let len = IntSet.cardinal rcomplete in (* NOTE: do this differently, not using eto *)
+  let tmax = match IntSet.max_elt_opt rcomplete with
+    | Some x -> x
+    | None -> 0
+  in
+  let maxtier = match len with
+    | 1 -> 1
+    | _ ->
+        let t = (tmax - 1) / 5 + 2 in
+        if t < 10 then t else 10
+  in
+  (* iterate over research list and add relevant techs *)
+  let research_list = research_list_of_field srd field in
+  let num, techs =
+    Array_slice.fold (fun (num, acc) l ->
+      List.fold_left (fun (num, acc) tech ->
+        if (not @@ IntSet.mem tech rcomplete) && num < tech_next_max then
+             (num + 1, tech::acc)
+        else
+             (num, acc)
+      )
+      (num, acc)
+      l
+    )
+    (0, [])
+    (Array_slice.make research_list 0 ~len:(maxtier - 1))
+  in
+  match num with
+  | 0 ->
+      let tmax =
+        if tmax <= 50 then 55
+        else
+          let tmax = tmax + 5 in
+          if tmax > 100 then 100 else tmax
+      in
+      OSeq.fold_while (fun (num, acc) tech ->
+        if tech > tmax || num >= tech_next_max then (num, acc), `Stop
+        else
+          let num, acc =
+            if not @@ IntSet.mem tech rcomplete then
+              (num+1, tech::acc)
+            else
+              num, acc
+          in
+          (num, acc), `Continue)
+        (0, [])
+        (OSeq.iterate 55 ((+) 5))
+
+  | _ ->
+      num, techs
+
+
+
+
+
 
 
 

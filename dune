@@ -1,7 +1,7 @@
 (executable
   (preprocess (pps ppx_deriving.enum))
   (name game)
-  (libraries unix containers)
+  (libraries unix containers oseq)
   )
 
 (env

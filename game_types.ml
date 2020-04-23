@@ -49,14 +49,21 @@ type ship_research_pership = {
   shipcount: int;
 }
 
+type ship_research_perfield = {
+  research_list: int list array; (* tech_tier_num * 3 *)
+  research_completed: IntSet.t; (* different from C *)
+}
+
 type ship_research = {
-  research_list: int array; (* tech_field_num * tech_tier_num * 3 *)
-  research_completed: IntSet.t array; (* tech_field_num *)
+  perfield: ship_research_perfield array; (* tech_field_num *)
   pership: ship_research_pership array;
 }
 
 let research_completed_of_field srd field =
-  srd.research_completed.(tech_field_to_enum field)
+  srd.perfield.(tech_field_to_enum field).research_completed
+
+let research_list_of_field srd field =
+  srd.perfield.(tech_field_to_enum field).research_list
 
 type empire_tech_orbit_perplayer = {
   contact: bool;

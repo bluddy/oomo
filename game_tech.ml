@@ -99,7 +99,7 @@ let add_newtech g player field tech source a8 stolen_from frame =
     ev_player.newtech <- {n with d = add::n.d; num = n.num + 1}
   end
 
-let get_next_techs g player field tbl =
+let get_next_techs g player field =
   let srd = get_srd g player in
   let eto = get_eto g player in
   let rcomplete = research_completed_of_field srd field in
@@ -151,6 +151,37 @@ let get_next_techs g player field tbl =
 
   | _ ->
       num, techs
+
+let ai_next_tech g player field = 0
+
+let tech_share g field accepted from_dead =
+  (* Search for players to take techs from *)
+  let tech_sources =
+    fold_perplayer (fun acc player pp ->
+      if Bool.equal pp.refuse accepted && (from_dead || pp.alive) then
+        (* We can take from this race *)
+        let rc = research_completed_of_field pp.srd field in
+        TechSet.fold (fun tech acc ->
+          TechMap.add tech player acc)
+          rc acc
+      else
+        acc
+    )
+    g
+    ~init:TechMap.empty
+  in
+  (* Add collected techs to other races *)
+  iter_perplayer (fun player pp ->
+    if Bool.equal pp.refuse accepted || not pp.alive then ()
+    else
+      if pp.is_ai then
+        let srd = get_srd g player in
+        research_completed_update srd field (fun rc ->
+          TechMap.fold (fun tech _ acc -> TechSet.add tech acc) tech_sources rc)
+      else
+        ()
+  )
+  g
 
 let get_next_rp g player field tech =
   let cost = tech * tech in

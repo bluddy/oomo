@@ -32,6 +32,7 @@ module Tech : Tech_t = struct
 end
 
 module TechSet = Set.Make(Tech)
+module TechMap = Map.Make(Tech)
 
 let get_max_tech ts = match TechSet.max_elt_opt ts with
   | Some x -> x

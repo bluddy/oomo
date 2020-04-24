@@ -1,3 +1,4 @@
+open Containers
 open Utils
 open Types
 open Shipdesign
@@ -61,6 +62,13 @@ type ship_research = {
 
 let research_completed_of_field srd field =
   srd.perfield.(tech_field_to_enum field).research_completed
+
+(* side effect: update srd perfield *)
+let research_completed_update srd field f =
+  let idx = tech_field_to_enum field in
+  let perfield = srd.perfield.(idx) in
+  let research_completed = f perfield.research_completed in
+  srd.perfield.(idx) <- { perfield with research_completed }
 
 let research_list_of_field srd field =
   srd.perfield.(tech_field_to_enum field).research_list
@@ -366,6 +374,8 @@ type t = {
     events: events;
 }
 
+let fold_perplayer f g ~init = Array.foldi (fun acc i x -> f acc (Player.of_int i) x) init g.perplayer
+let iter_perplayer f g = Array.iteri (fun i x -> f (Player.of_int i) x) g.perplayer
 let get_srd g player = g.perplayer.(Player.to_int player).srd
 let get_eto g player = g.perplayer.(Player.to_int player).eto
 let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)

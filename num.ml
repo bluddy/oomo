@@ -63,7 +63,11 @@ let num_tech_costmuld = [| 20; 25; 30; 35; 40 |]
 let get_tech_costmuld difficulty =
   num_tech_costmuld.(difficulty_to_enum difficulty)
 
+(* difficulty multiplier for AI *)
 let num_tech_costmula = [| 20; 20; 20; 20; 20 |]
+
+let get_tech_costmula difficulty =
+  num_tech_costmula.(difficulty_to_enum difficulty)
 
 (* per race, per field *)
 let num_tech_costmulr = [|

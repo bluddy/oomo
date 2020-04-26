@@ -3,6 +3,10 @@ open Utils
 open Types
 open Shipdesign
 
+type ai_t = Classic | ClassicPlus | Muxer | Stub
+
+let game_ai_default = ClassicPlus
+
 type fleet_enroute = {
   owner: Player.t;
   x: int;
@@ -358,7 +362,7 @@ type t = {
     transport_num: int;
     year: int; (* init to 1 *)
     players: int;
-    ai_id: Ai.t;
+    ai_id: ai_t;
     active_player: Player.t;
     difficulty: difficulty;
     galaxy_size: galaxy_size;

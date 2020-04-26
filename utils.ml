@@ -13,3 +13,6 @@ let array_foldi f ~init ~arr =
     arr
   |> snd
 
+let random_n n = Random.int n
+
+let random_1_n n = Random.int n + 1 (* BUG? should limit be n+1 *)

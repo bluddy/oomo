@@ -101,6 +101,7 @@ let add_newtech g player field tech source a8 stolen_from frame =
     ev_player.newtech <- {n with d = add::n.d; num = n.num + 1}
   end
 
+(* Find techs to add *)
 let get_next_techs g player field =
   let eto = get_eto g player in
   let rcomplete = get_research_completed eto field in
@@ -119,36 +120,38 @@ let get_next_techs g player field =
       List.fold_left (fun (num, acc) tech ->
         if (not @@ TechSet.mem tech rcomplete) && num < tech_next_max then
              (num + 1, tech::acc)
-        else
-             (num, acc)
-      )
+        else num, acc)
       (num, acc)
       l
     )
     (0, [])
     (Array_slice.make research_list 0 ~len:(maxtier - 1))
   in
+  let techs = techs |> List.rev |> Array.of_list in
   match num with
   | 0 ->
-      let tmax =
-        if tmax <= 50 then 55
-        else
-          let tmax = tmax + 5 in
-          if tmax > 100 then 100 else tmax
+      let num, techs =
+        let tmax =
+          if tmax <= 50 then 55
+          else
+            let tmax = tmax + 5 in
+            if tmax > 100 then 100 else tmax
+        in
+        OSeq.fold_while (fun (num, acc) tech ->
+          if tech > tmax || num >= tech_next_max then (num, acc), `Stop
+          else
+            let tech = Tech.of_int tech in
+            let num, acc =
+              if not @@ TechSet.mem tech rcomplete then
+                (num+1, tech::acc)
+              else
+                num, acc
+            in
+            (num, acc), `Continue)
+          (0, [])
+          (OSeq.iterate 55 ((+) 5))
       in
-      OSeq.fold_while (fun (num, acc) tech ->
-        if tech > tmax || num >= tech_next_max then (num, acc), `Stop
-        else
-          let tech = Tech.of_int tech in
-          let num, acc =
-            if not @@ TechSet.mem tech rcomplete then
-              (num+1, tech::acc)
-            else
-              num, acc
-          in
-          (num, acc), `Continue)
-        (0, [])
-        (OSeq.iterate 55 ((+) 5))
+      num, techs |> List.rev |> Array.of_list
 
   | _ ->
       num, techs
@@ -160,7 +163,7 @@ let get_next_rp g player field tech =
   let cost = cost * Num.get_tech_costmulr eto.race field in
   let cost =
     if is_ai g player then
-      let cost = cost * g.ai.tech_cost g player in
+      let cost = cost * Ai.tech_cost g player in
       cost / 100
     else
       (cost * Num.get_tech_costmuld g.difficulty / 1000) * 10
@@ -172,7 +175,7 @@ let start_next g player field tech =
   let eto = get_eto g player in
   let techdata = get_techdata eto field in
   let investment =
-    if Project.(not @@ techdata.project = none) then 0
+    if Tech.(not (techdata.project = none)) then 0
     else techdata.investment
   in
   let project = tech in
@@ -181,14 +184,14 @@ let start_next g player field tech =
   let events_pp = get_events_perplayer g player in
   update_nexttech events_pp field (fun nt -> {nt with num = 0})
 
+(* start_next: mutates techdata, nexttech *)
 let ai_tech_next g player field =
   let num, techs = get_next_techs g player field in
   if num > 0 then begin
-    let tech = game_ai.tech_next g player field techs num in
+    let tech = Ai.tech_next g player field techs num in
     start_next g player field tech
   end
-    
-  
+
   (* mutates techdata *)
 let tech_get_new g player field tech source a8 stolen_from frame =
   let eto = get_eto g player in
@@ -245,7 +248,7 @@ let tech_share g field accepted from_dead =
     if Bool.equal pp.refuse accepted || not pp.alive then ()
     else
       if pp.is_ai then
-        research_completed_update (get_eto g player) field (fun rc ->
+        update_research_completed (get_eto g player) field (fun rc ->
           TechMap.fold (fun tech _ acc -> TechSet.add tech acc) tech_sources rc)
       else
         () (* TODO *)

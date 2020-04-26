@@ -123,7 +123,9 @@ let battle_ai_turn battle = 0
 
 let battle_ai_retreat battle = 0
 
-let tech_next g player field techs num =
+let tech_next g player field techs =
+  let num = Array.length techs in
+  (* Chance of AI getting best tech *)
   if random_1_n 6 < difficulty_to_enum g.difficulty then
     techs.(num-1)
   else

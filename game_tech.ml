@@ -115,7 +115,7 @@ let get_next_techs g player field =
   in
   (* iterate over research list and add relevant techs *)
   let research_list = research_list_of_field eto field in
-  let num, techs =
+  let _, techs =
     Array_slice.fold (fun (num, acc) l ->
       List.fold_left (fun (num, acc) tech ->
         if (not @@ TechSet.mem tech rcomplete) && num < tech_next_max then
@@ -128,9 +128,9 @@ let get_next_techs g player field =
     (Array_slice.make research_list 0 ~len:(maxtier - 1))
   in
   let techs = techs |> List.rev |> Array.of_list in
-  match num with
+  match Array.length techs with
   | 0 ->
-      let num, techs =
+      let _, techs =
         let tmax =
           if tmax <= 50 then 55
           else
@@ -151,10 +151,9 @@ let get_next_techs g player field =
           (0, [])
           (OSeq.iterate 55 ((+) 5))
       in
-      num, techs |> List.rev |> Array.of_list
+      techs |> List.rev |> Array.of_list
 
-  | _ ->
-      num, techs
+  | _ -> techs
 
 let get_next_rp g player field tech =
   let tech_i = Tech.to_int tech in
@@ -170,7 +169,8 @@ let get_next_rp g player field tech =
   in
   cost
 
-(* mutates techdata, nexttech *)
+(* Create event for player to get tech
+ * mutates techdata, nexttech *)
 let start_next g player field tech =
   let eto = get_eto g player in
   let techdata = get_techdata eto field in
@@ -186,9 +186,9 @@ let start_next g player field tech =
 
 (* start_next: mutates techdata, nexttech *)
 let ai_tech_next g player field =
-  let num, techs = get_next_techs g player field in
-  if num > 0 then begin
-    let tech = Ai.tech_next g player field techs num in
+  let techs = get_next_techs g player field in
+  if Array.length techs > 0 then begin
+    let tech = Ai.tech_next g player field techs in
     start_next g player field tech
   end
 

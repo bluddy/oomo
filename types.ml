@@ -38,6 +38,8 @@ let get_max_tech ts = match TechSet.max_elt_opt ts with
   | Some x -> x
   | None -> Tech.of_int 0
 
+let get_tech_num ts = TechSet.cardinal ts
+
 type tech_field =
   | Tech_field_computer | Tech_field_construction | Tech_field_force_field
   | Tech_field_planetology | Tech_field_propulsion | Tech_field_weapon

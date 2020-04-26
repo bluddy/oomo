@@ -36,7 +36,8 @@ type techdata_perfield = {
   investment: int;
   project: int;
   cost: int;
-  completed: int; (* num of completed projects, len of srd[i].researchcompleted *)
+  research_list: Tech.t list array; (* tech_tier_num * 3 *)
+  research_completed: TechSet.t; (* different from C: we use a set *)
 }
 
 let tech_tier_num = 10
@@ -49,29 +50,6 @@ type ship_research_pership = {
   year: int;
   shipcount: int;
 }
-
-type ship_research_perfield = {
-  research_list: Tech.t list array; (* tech_tier_num * 3 *)
-  research_completed: TechSet.t; (* different from C *)
-}
-
-type ship_research = {
-  perfield: ship_research_perfield array; (* tech_field_num *)
-  pership: ship_research_pership array;
-}
-
-let research_completed_of_field srd field =
-  srd.perfield.(tech_field_to_enum field).research_completed
-
-(* side effect: update srd perfield *)
-let research_completed_update srd field f =
-  let idx = tech_field_to_enum field in
-  let perfield = srd.perfield.(idx) in
-  let research_completed = f perfield.research_completed in
-  srd.perfield.(idx) <- { perfield with research_completed }
-
-let research_list_of_field srd field =
-  srd.perfield.(tech_field_to_enum field).research_list
 
 type empire_tech_orbit_perplayer = {
   contact: bool;
@@ -120,6 +98,7 @@ type empire_tech_orbit_perplayer = {
   spies: int;
   spyreportfield: int; (* TECH_FIELD_NUM *)
   spyreportyear: int;
+  research_pership: ship_research_pership array; (* moved from srd *)
 }
 
 type empire_tech_orbit = {
@@ -129,7 +108,7 @@ type empire_tech_orbit = {
   trait2: trait2;
   ai_p3_countdown: int;
   ai_p2_countdown: int;
-  perplayer: empire_tech_orbit_perplayer list;
+  perplayer: empire_tech_orbit_perplayer array;
   have_planet_shield: int; (* 0,5,10,15,20 *)
   planet_shield_cost: int;
   security:int; (* tenths *)
@@ -175,9 +154,22 @@ type empire_tech_orbit = {
   shipi_bomber: int;
 }
 
+let research_completed_of_field eto field =
+  eto.tech.(tech_field_to_enum field).research_completed
+
+(* side effect: update srd perfield *)
+let research_completed_update eto field f =
+  let idx = tech_field_to_enum field in
+  let perfield = eto.tech.(idx) in
+  let research_completed = f perfield.research_completed in
+  eto.tech.(idx) <- { perfield with research_completed }
+
+let research_list_of_field eto field =
+  eto.tech.(tech_field_to_enum field).research_list
+
 let get_eto_contact_idxs eto =
   (* Return list of contact idxs *)
-    List.fold_left (fun (i, acc) x ->
+    Array.fold_left (fun (i, acc) x ->
       if x.contact then (i+1, (Player.of_int i)::acc)
       else (i+1, acc))
     (0, [])
@@ -331,7 +323,6 @@ type per_player = {
   current_design: shipdesign;
   gaux: Game_aux.t;
   eto: empire_tech_orbit;
-  srd: ship_research;
 }
 
 type locinfo = {
@@ -376,6 +367,5 @@ type t = {
 
 let fold_perplayer f g ~init = Array.foldi (fun acc i x -> f acc (Player.of_int i) x) init g.perplayer
 let iter_perplayer f g = Array.iteri (fun i x -> f (Player.of_int i) x) g.perplayer
-let get_srd g player = g.perplayer.(Player.to_int player).srd
 let get_eto g player = g.perplayer.(Player.to_int player).eto
 let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)

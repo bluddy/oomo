@@ -26,8 +26,8 @@ let get_tech_reduce_50 percent (* 1..100 *) =
   tech_reduce_50percent_per_10pts.(percent - 1)
 
 let player_has_tech g field tech player =
-  let srd = get_srd g player in
-  let research = research_completed_of_field srd field in
+  let eto = get_eto g player in
+  let research = research_completed_of_field eto field in
   TechSet.mem tech research
 
 let get_base_cost_mod_armor g player percent =
@@ -100,10 +100,9 @@ let add_newtech g player field tech source a8 stolen_from frame =
   end
 
 let get_next_techs g player field =
-  let srd = get_srd g player in
   let eto = get_eto g player in
-  let rcomplete = research_completed_of_field srd field in
-  let len = (get_techdata_of_field eto field).completed in
+  let rcomplete = research_completed_of_field eto field in
+  let len = get_tech_num rcomplete in
   let tmax = Tech.to_int @@ get_max_tech rcomplete in
   let maxtier = match len with
     | 1 -> 1
@@ -112,7 +111,7 @@ let get_next_techs g player field =
         if t < 10 then t else 10
   in
   (* iterate over research list and add relevant techs *)
-  let research_list = research_list_of_field srd field in
+  let research_list = research_list_of_field eto field in
   let num, techs =
     Array_slice.fold (fun (num, acc) l ->
       List.fold_left (fun (num, acc) tech ->
@@ -160,7 +159,7 @@ let tech_share g field accepted from_dead =
     fold_perplayer (fun acc player pp ->
       if Bool.equal pp.refuse accepted && (from_dead || pp.alive) then
         (* We can take from this race *)
-        let rc = research_completed_of_field pp.srd field in
+        let rc = research_completed_of_field pp.eto field in
         TechSet.fold (fun tech acc ->
           TechMap.add tech player acc)
           rc acc
@@ -175,8 +174,8 @@ let tech_share g field accepted from_dead =
     if Bool.equal pp.refuse accepted || not pp.alive then ()
     else
       if pp.is_ai then
-        let srd = get_srd g player in
-        research_completed_update srd field (fun rc ->
+        let eto = get_eto g player in
+        research_completed_update eto field (fun rc ->
           TechMap.fold (fun tech _ acc -> TechSet.add tech acc) tech_sources rc)
       else
         ()

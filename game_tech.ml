@@ -27,7 +27,7 @@ let get_tech_reduce_50 percent (* 1..100 *) =
 
 let player_has_tech g field tech player =
   let eto = get_eto g player in
-  let research = research_completed_of_field eto field in
+  let research = get_research_completed eto field in
   TechSet.mem tech research
 
 let get_base_cost_mod_armor g player percent =
@@ -72,6 +72,8 @@ let get_base_cost_mod_jammer g player percent =
   let hull_data = Shiptech.get_jammer_hull jammer Ship_hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
+  (* Add a newtech event *)
+  (* mutates newtech *)
 let add_newtech g player field tech source a8 stolen_from frame =
   let ev_player = get_events_perplayer g player in
   let num = ev_player.newtech.num in
@@ -87,7 +89,7 @@ let add_newtech g player field tech source a8 stolen_from frame =
         * For some reason, we *have* to have 2 others, or it doesn't work. BUG? *)
         let eto = get_eto g stolen_from in
         match get_eto_contact_idxs eto with
-        | x::y::zs when not (Player.eq x player) && not (Player.eq y player) -> x, y, frame
+        | x::y::_ when not Player.(x = player) && not @@ Player.(y = player) -> x, y, frame
         | _ -> Player.none, Player.none, false
       else
         Player.none, Player.none, false
@@ -101,7 +103,7 @@ let add_newtech g player field tech source a8 stolen_from frame =
 
 let get_next_techs g player field =
   let eto = get_eto g player in
-  let rcomplete = research_completed_of_field eto field in
+  let rcomplete = get_research_completed eto field in
   let len = get_tech_num rcomplete in
   let tmax = Tech.to_int @@ get_max_tech rcomplete in
   let maxtier = match len with
@@ -151,7 +153,76 @@ let get_next_techs g player field =
   | _ ->
       num, techs
 
-let ai_next_tech g player field = 0
+let get_next_rp g player field tech =
+  let tech_i = Tech.to_int tech in
+  let cost = tech_i * tech_i in
+  let eto = get_eto g player in
+  let cost = cost * Num.get_tech_costmulr eto.race field in
+  let cost =
+    if is_ai g player then
+      let cost = cost * g.ai.tech_cost g player in
+      cost / 100
+    else
+      (cost * Num.get_tech_costmuld g.difficulty / 1000) * 10
+  in
+  cost
+
+(* mutates techdata, nexttech *)
+let start_next g player field tech =
+  let eto = get_eto g player in
+  let techdata = get_techdata eto field in
+  let investment =
+    if Project.(not @@ techdata.project = none) then 0
+    else techdata.investment
+  in
+  let project = tech in
+  let cost = get_next_rp g player field tech in
+  update_techdata eto field (fun td -> {td with investment; project; cost});
+  let events_pp = get_events_perplayer g player in
+  update_nexttech events_pp field (fun nt -> {nt with num = 0})
+
+let ai_tech_next g player field =
+  let num, techs = get_next_techs g player field in
+  if num > 0 then begin
+    let tech = game_ai.tech_next g player field techs num in
+    start_next g player field tech
+  end
+    
+  
+  (* mutates techdata *)
+let tech_get_new g player field tech source a8 stolen_from frame =
+  let eto = get_eto g player in
+  let rcompleted = get_research_completed eto field in
+  let have_tech = TechSet.mem tech rcompleted in
+  if have_tech || Tech.(tech = Tech.none) then
+    if Tech.((get_techdata eto field).project = tech) then begin
+      if is_ai g player then begin
+        ai_tech_next g player field
+      end else begin
+        update_techdata eto field (fun td -> {td with project = Tech.none});
+        match source with
+        | Techsource_trade -> add_newtech g player field tech source a8 stolen_from frame
+        | _ -> ()
+      end
+    end
+  else begin (* don't have this tech *)
+    update_research_completed eto field (fun rc -> TechSet.add tech rc);
+
+    if is_human g player then begin
+      add_newtech g player field tech source a8 stolen_from frame
+    end;
+
+    if Tech.((get_techdata eto field).project = tech) then begin
+      update_techdata eto field (fun td ->
+        {td with project = Tech.none; investment = 1})
+    end;
+
+    if Tech.((get_techdata eto field).project = Tech.none) &&
+        is_ai g player then begin
+      ai_tech_next g player field
+    end
+  end
+
 
 let tech_share g field accepted from_dead =
   (* Search for players to take techs from *)
@@ -159,7 +230,7 @@ let tech_share g field accepted from_dead =
     fold_perplayer (fun acc player pp ->
       if Bool.equal pp.refuse accepted && (from_dead || pp.alive) then
         (* We can take from this race *)
-        let rc = research_completed_of_field pp.eto field in
+        let rc = get_research_completed pp.eto field in
         TechSet.fold (fun tech acc ->
           TechMap.add tech player acc)
           rc acc
@@ -174,24 +245,14 @@ let tech_share g field accepted from_dead =
     if Bool.equal pp.refuse accepted || not pp.alive then ()
     else
       if pp.is_ai then
-        let eto = get_eto g player in
-        research_completed_update eto field (fun rc ->
+        research_completed_update (get_eto g player) field (fun rc ->
           TechMap.fold (fun tech _ acc -> TechSet.add tech acc) tech_sources rc)
       else
-        ()
+        () (* TODO *)
   )
   g
 
-let get_next_rp g player field tech =
-  let cost = tech * tech in
-  let eto = get_eto g player in
-  let cost = cost * Num.get_tech_costmulr race field in
-  0
 
-let start_next g player field tech =
-  let eto = get_eto g player in
-  let techdata = 0 in
-  0
 
 
 

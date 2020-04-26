@@ -59,6 +59,10 @@ let num_pshield_cost = [| 0; 500; 1000; 1500; 2000 |]
 
 (* difficulty multipler: per difficulty *)
 let num_tech_costmuld = [| 20; 25; 30; 35; 40 |]
+
+let get_tech_costmuld difficulty =
+  num_tech_costmuld.(difficulty_to_enum difficulty)
+
 let num_tech_costmula = [| 20; 20; 20; 20; 20 |]
 
 (* per race, per field *)

@@ -29,12 +29,12 @@ type fleet_orbit = {
   ships: int list; (* NUM_SHIPDESIGNS *)
 }
 
-type techdata_perfield = {
+type techdata = {
   percent: int; (* tech level % *)
   slider: int;
   slider_lock: bool;
   investment: int;
-  project: int;
+  project: Tech.t; (* current project *)
   cost: int;
   research_list: Tech.t list array; (* tech_tier_num * 3 *)
   research_completed: TechSet.t; (* different from C: we use a set *)
@@ -146,7 +146,7 @@ type empire_tech_orbit = {
   ind_waste_scale: int; (* 0, 2, ... 10 *)
   fuel_range: int; (* 3..10, 30 *)
   have_combat_transporter: bool;
-  tech: techdata_perfield array; (* NUM_FIELDS *)
+  tech: techdata array; (* NUM_FIELDS *)
   have_engine: int; (* 1.. *)
   shipdesigns_num: int;
   orbit: fleet_orbit list; (* PLANETS_MAX *)
@@ -154,11 +154,19 @@ type empire_tech_orbit = {
   shipi_bomber: int;
 }
 
-let research_completed_of_field eto field =
-  eto.tech.(tech_field_to_enum field).research_completed
+let get_techdata eto field = eto.tech.(tech_field_to_enum field)
+
+let update_techdata eto field f =
+  let tech = eto.tech in
+  let tech_n = tech_field_to_enum field in
+  tech.(tech_n) <- f (tech.(tech_n))
+
+let get_research_completed eto field =
+  (get_techdata eto field).research_completed
+
 
 (* side effect: update srd perfield *)
-let research_completed_update eto field f =
+let update_research_completed eto field f =
   let idx = tech_field_to_enum field in
   let perfield = eto.tech.(idx) in
   let research_completed = f perfield.research_completed in
@@ -176,7 +184,7 @@ let get_eto_contact_idxs eto =
     eto.perplayer
     |> snd
 
-let get_techdata_of_field eto field = eto.tech.(tech_field_to_enum field)
+let get_techdata eto field = eto.tech.(tech_field_to_enum field)
 
 let newtech_max = 15
 
@@ -211,7 +219,7 @@ let newtech_v06_orion = planets_max
 type newtechs = {
   num: int;
   d: newtech list; (* newtech_max *)
-  next: nexttech list; (* tech_field_max *)
+  next: nexttech array; (* tech_field_max *)
 }
 
 let game_event_tbl_num = 20
@@ -233,6 +241,14 @@ type events_perplayer = {
   help_shown: bool array; (* help_shown_num *)
   msg_filter: bool array; (* finished_num *)
 }
+
+let get_nexttech events_pp field =
+  events_pp.newtech.next.(tech_field_to_enum field)
+
+let update_nexttech events_pp field f =
+  let next_arr = events_pp.newtech.next in
+  let field_i = tech_field_to_enum field in
+  next_arr.(field_i) <- f (next_arr.(field_i))
 
 type events_pair = {
   spies_caught: int; (* catcher,spy *)
@@ -369,3 +385,6 @@ let fold_perplayer f g ~init = Array.foldi (fun acc i x -> f acc (Player.of_int 
 let iter_perplayer f g = Array.iteri (fun i x -> f (Player.of_int i) x) g.perplayer
 let get_eto g player = g.perplayer.(Player.to_int player).eto
 let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)
+let get_t_perplayer g player = g.perplayer.(Player.to_int player)
+let is_ai g player = (get_t_perplayer g player).is_ai
+let is_human g player = not @@ is_ai g player

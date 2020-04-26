@@ -1,34 +1,32 @@
 
-module type Player_t = sig
+module type IntType_t = sig
   type t
   val to_int: t -> int
   val of_int: int -> t
   val none: t
+  val compare: t -> t -> int
   val eq: t -> t -> bool
+  val (=): t -> t -> bool
 end
 
-module Player : Player_t = struct
+module Player : IntType_t = struct
   type t = int
   let none = -1
   let to_int x : int = x
   let of_int x : t = x
+  let compare x y = (to_int x) - (to_int y)
   let eq x y = to_int x = to_int y
+  let (=) = eq
 end
 
-module type Tech_t = sig
-  type t
-  val to_int: t -> int
-  val of_int: int -> t
-  val compare: t -> t -> int
-  val eq: t -> t -> bool
-end
-
-module Tech : Tech_t = struct
+module Tech : IntType_t = struct
   type t = int
-  let to_int x : int = x
-  let of_int x : t = x
+  let to_int (x:t) : int = x
+  let of_int (x:int) : t = x
+  let none = 0
   let compare x y = (to_int x) - (to_int y)
   let eq x y = (to_int x) = (to_int y)
+  let (=) = eq
 end
 
 module TechSet = Set.Make(Tech)
@@ -62,6 +60,7 @@ type galaxy_size =
 
 type difficulty =
   | Simple | Easy | Average | Hard | Impossible
+  [@@ deriving enum]
 
 type treaty =
   | No_treaty | Non_aggression | Alliance | War | Final_war

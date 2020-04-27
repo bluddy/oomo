@@ -371,7 +371,7 @@ type t = {
     galaxy_stars: int; (* w*h *)
     galaxy_maxx: int;
     galaxy_maxy: int;
-    seed: int; (* current seed *)
+    seed: Random.State.t; (* was int *)
     galaxy_seed: int; (* seed of galaxy *)
     gend: game_end_type;
     winner: Player.t;

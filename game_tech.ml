@@ -192,8 +192,8 @@ let ai_tech_next g player field =
     start_next g player field tech
   end
 
-  (* mutates techdata *)
-let tech_get_new g player field tech source a8 stolen_from frame =
+  (* mutates techdata, newtech, nexttech *)
+let get_new g player field tech source a8 stolen_from frame =
   let eto = get_eto g player in
   let rcompleted = get_research_completed eto field in
   let have_tech = TechSet.mem tech rcompleted in
@@ -247,21 +247,21 @@ let tech_share g field accepted from_dead =
   iter_perplayer (fun player pp ->
     if Bool.equal pp.refuse accepted || not pp.alive then ()
     else
-      if pp.is_ai then
+      if pp.is_ai then begin
+        (* Add collected techs to AI *)
         update_research_completed (get_eto g player) field (fun rc ->
           TechMap.fold (fun tech _ acc -> TechSet.add tech acc) tech_sources rc)
-      else
-        () (* TODO *)
+      end else begin
+        TechMap.to_iter tech_sources
+        |> Iter.take_while (fun _ ->
+            (get_events_perplayer g player).newtech.num < newtech_max)
+        |> Iter.iter (fun (tech, source_p) ->
+          if not @@ player_has_tech g field tech player then
+            (* BUG:? Odd conversion of source player to a8
+             * And why don't we track who we took it from? (player.none)
+             *)
+            get_new g player field tech Techsource_trade (Player.to_int source_p) Player.none false
+          )
+      end
   )
-  g
-
-
-
-
-
-
-
-
-
-
 

@@ -70,7 +70,9 @@ type weapon =
   | Weapon_amoeba_stream
   [@@deriving enum]
 
-type ship_comp =
+let weapon_to_tech sh = Tech.of_int @@ weapon_to_enum sh
+
+type comp =
   | Comp_none
   | Comp_mark_i
   | Comp_mark_ii
@@ -85,7 +87,9 @@ type ship_comp =
   | Comp_mark_xi
   [@@deriving enum]
 
-type ship_engine =
+let comp_to_tech sh = Tech.of_int @@ comp_to_enum sh
+
+type engine =
   | Engine_retros
   | Engine_nuclear
   | Engine_sub_light
@@ -97,7 +101,9 @@ type ship_engine =
   | Engine_hyperthrust
   [@@deriving enum]
 
-type ship_armor =
+let engine_to_tech sh = Tech.of_int @@ engine_to_enum sh
+
+type armor =
   | Armor_titanium
   | Armor_titanium_ii
   | Armor_duralloy
@@ -114,7 +120,9 @@ type ship_armor =
   | Armor_neutronium_ii
   [@@deriving enum]
 
-type ship_shield =
+let armor_to_tech sh = Tech.of_int @@ armor_to_enum sh
+
+type shield =
   | Shield_none
   | Shield_class_i
   | Shield_class_ii
@@ -129,7 +137,9 @@ type ship_shield =
   | Shield_class_xv
   [@@deriving enum]
 
-type ship_jammer =
+let shield_to_tech sh = Tech.of_int @@ shield_to_enum sh
+
+type jammer =
   | Jammer_none
   | Jammer_i
   | Jammer_ii
@@ -143,45 +153,47 @@ type ship_jammer =
   | Jammer_x
   [@@deriving enum]
 
-type ship_special =
-  | Ship_special_none
-  | Ship_special_reserve_fuel_tanks
-  | Ship_special_standard_colony_base
-  | Ship_special_barren_colony_base
-  | Ship_special_tundra_colony_base
-  | Ship_special_dead_colony_base
-  | Ship_special_inferno_colony_base
-  | Ship_special_toxic_colony_base
-  | Ship_special_radiated_colony_base
-  | Ship_special_battle_scanner
-  | Ship_special_anti_missile_rockets
-  | Ship_special_repulsor_beam
-  | Ship_special_warp_dissipator
-  | Ship_special_energy_pulsar
-  | Ship_special_inertial_stabilizer
-  | Ship_special_zyro_shield
-  | Ship_special_automated_repair
-  | Ship_special_stasis_field
-  | Ship_special_cloaking_device
-  | Ship_special_ion_stream_projector
-  | Ship_special_high_energy_focus
-  | Ship_special_ionic_pulsar
-  | Ship_special_black_hole_generator
-  | Ship_special_sub_space_teleporter
-  | Ship_special_ligtning_shield
-  | Ship_special_neutron_stream_projector
-  | Ship_special_adv_damage_control
-  | Ship_special_technology_nullifier
-  | Ship_special_inertial_nullifier
-  | Ship_special_oracle_interface
-  | Ship_special_displacement_device
+let jammer_to_tech sh = Tech.of_int @@ jammer_to_enum sh
+
+type special =
+  | Special_none
+  | Special_reserve_fuel_tanks
+  | Special_standard_colony_base
+  | Special_barren_colony_base
+  | Special_tundra_colony_base
+  | Special_dead_colony_base
+  | Special_inferno_colony_base
+  | Special_toxic_colony_base
+  | Special_radiated_colony_base
+  | Special_battle_scanner
+  | Special_anti_missile_rockets
+  | Special_repulsor_beam
+  | Special_warp_dissipator
+  | Special_energy_pulsar
+  | Special_inertial_stabilizer
+  | Special_zyro_shield
+  | Special_automated_repair
+  | Special_stasis_field
+  | Special_cloaking_device
+  | Special_ion_stream_projector
+  | Special_high_energy_focus
+  | Special_ionic_pulsar
+  | Special_black_hole_generator
+  | Special_sub_space_teleporter
+  | Special_ligtning_shield
+  | Special_neutron_stream_projector
+  | Special_adv_damage_control
+  | Special_technology_nullifier
+  | Special_inertial_nullifier
+  | Special_oracle_interface
+  | Special_displacement_device
   [@@deriving enum]
 
-type ship_hull =
-  | Ship_hull_small
-  | Ship_hull_medium
-  | Ship_hull_large
-  | Ship_hull_huge
+type hull =
+  | Hull_small
+  | Hull_medium
+  | Hull_large
+  | Hull_huge
   [@@deriving enum]
 
 type st_weapon = {
@@ -232,7 +244,7 @@ type shiptech_comp = {
   level: int;
 }
 
-let get_comp_hull comp hull = comp.shiphull.(ship_hull_to_enum hull)
+let get_comp_hull comp hull = comp.shiphull.(hull_to_enum hull)
 
 let mk_comp name power_l space_l cost_l tech_i level =
   let shiphull =
@@ -249,7 +261,7 @@ type shiptech_jammer = {
   level: int;
 }
 
-let get_jammer_hull jammer hull = jammer.shiphull.(ship_hull_to_enum hull)
+let get_jammer_hull jammer hull = jammer.shiphull.(hull_to_enum hull)
 
 let mk_jammer name power_l space_l cost_l tech_i level =
   let shiphull =
@@ -285,7 +297,7 @@ type shiptech_armor = {
 }
 
 let get_armor_hull armor hull =
-  armor.shiphull.(ship_hull_to_enum hull)
+  armor.shiphull.(hull_to_enum hull)
 
 let mk_armor name cost_l space_l armor tech_i =
   let shiphull =
@@ -302,7 +314,7 @@ type shiptech_shield = {
   tech_i: Tech.t;
 }
 
-let get_shield_hull shield hull = shield.shiphull.(ship_hull_to_enum hull)
+let get_shield_hull shield hull = shield.shiphull.(hull_to_enum hull)
 
 let mk_shield name cost_l space_l power_l absorb tech_i =
   let tech_i = Tech.of_int tech_i in
@@ -365,7 +377,7 @@ type shiptech_hull = {
 let mk_hull name cost space hits power defense =
   {name; cost; space; hits; power; defense}
 
-let tbl_weap = [|
+let tbl_weapon = [|
   mk_weapon "NONE" ""
     0 0 0
     0 false false false
@@ -943,6 +955,8 @@ let tbl_weap = [|
         0xc 1
 |]
 
+let get_weapon x = tbl_weapon.(weapon_to_enum x)
+
 let tbl_comp = [|
   mk_comp "NONE" [0; 0; 0; 0] [0; 0; 0; 0] [0; 0; 0; 0] 0 0;
   mk_comp "MARK I" [5; 10; 20; 100] [5; 10; 20; 100] [40; 200; 1000; 5000] 1 1;
@@ -958,6 +972,8 @@ let tbl_comp = [|
   mk_comp "MARK XI" [30; 60; 120; 600] [30; 60; 120; 600] [140; 600; 3000; 15000] 50 11;
 |]
 
+let get_comp x = tbl_comp.(comp_to_enum x)
+
 let tbl_engine = [|
    mk_engine "RETROS" 10 10 20 1 1 ;
    mk_engine "NUCLEAR" 20 18 40 2 6 ;
@@ -969,6 +985,8 @@ let tbl_engine = [|
    mk_engine "INTERPHASED" 80 47 160 8 42 ;
    mk_engine "HYPERTHRUST" 90 50 180 9 48 ;
 |]
+
+let get_engine x = tbl_engine.(engine_to_enum x)
 
 let tbl_armor = [|
   mk_armor "TITANIUM"      [0; 0; 0; 0] [0; 0; 0; 0] 100 1;
@@ -987,6 +1005,8 @@ let tbl_armor = [|
   mk_armor "NEUTRONIUM II" [180; 900; 4500; 25000] [50; 175; 875; 4375] 600 50;
 |]
 
+let get_armor x = tbl_armor.(armor_to_enum x)
+
 let armor_foldi f ~init = Array.foldi f init tbl_armor
 
 let tbl_shield = [|
@@ -1004,6 +1024,8 @@ let tbl_shield = [|
   mk_shield "CLASS XV" [ 90; 490; 3200; 20000 ] [ 55; 160; 360; 1500 ] [ 55; 160; 360; 1500 ] 15 50;
 |]
 
+let get_shield x = tbl_shield.(shield_to_enum x)
+
 let tbl_jammer = [|
   mk_jammer "NONE"        [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;
   mk_jammer "JAMMER I"    [ 10; 20; 40; 170 ] [ 10; 20; 40; 170 ] [ 25; 150; 1000; 6250 ] 2 1;
@@ -1018,7 +1040,11 @@ let tbl_jammer = [|
   mk_jammer "JAMMER X"    [ 55; 110; 220; 900 ] [ 55; 110; 220; 900 ] [ 50; 285; 1900; 11875 ] 47 10;
 |]
 
-let jammer_foldi f ~init = Array.foldi f init tbl_jammer
+let get_jammer x = tbl_jammer.(jammer_to_enum x)
+
+let fold_jammer f ~init =
+  let g acc i x = f (Option.get_exn @@ jammer_of_enum i) acc x in
+  Array.foldi g init tbl_jammer
 
 let tbl_hull = [|
   mk_hull "SMALL" 60 40 3 2 2;
@@ -1027,7 +1053,7 @@ let tbl_hull = [|
   mk_hull "HUGE" 12000 5000 600 700 (-1);
 |]
 
-let hull_get x = tbl_hull.(ship_hull_to_enum x)
+let get_hull x = tbl_hull.(hull_to_enum x)
 
 let tbl_special = [|
     mk_special "NONE" ""

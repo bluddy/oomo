@@ -1,5 +1,4 @@
 open Types
-open Shiptech
 
 let ship_name_len = 12
 let ship_look_per_hull = 6
@@ -8,7 +7,7 @@ let weapon_slot_num = 4
 let special_slot_num = 3
 
 type weapon_info = {
-  wtype: weapon;
+  wtype: Shiptech.weapon;
   wnum: int;
 }
 
@@ -16,16 +15,16 @@ type shipdesign = {
   name: string;
   cost: int;
   space: int;
-  hull: ship_hull;
+  hull: Shiptech.hull;
   look: int;
   weapon_info: weapon_info list;
-  engine: ship_engine;
+  engine: Shiptech.engine;
   engines: int;
-  special: ship_special list; (* special_slot_num *)
-  shield: ship_shield;
-  jammer: ship_jammer;
-  comp: ship_comp;
-  armor: ship_armor;
+  special: Shiptech.special list; (* special_slot_num *)
+  shield: Shiptech.shield;
+  jammer: Shiptech.jammer;
+  comp: Shiptech.comp;
+  armor: Shiptech.armor;
   man: int; (* maneuverability *)
   hp: int;
 }
@@ -45,56 +44,56 @@ let starfleet_ships = [| 2; 0; 0; 0; 1; 0 |]
 
 let tbl_startship = [|
     (* SCOUT *)
-      mk_shipdesign "" 10 0 Ship_hull_small 0
+      mk_shipdesign "" 10 0 Hull_small 0
       [ Weapon_none; Weapon_none; Weapon_none; Weapon_none ]
       [ 0; 0; 0; 0 ]
       Engine_retros 10
-      [ Ship_special_reserve_fuel_tanks; Ship_special_none; Ship_special_none ]
+      [ Special_reserve_fuel_tanks; Special_none; Special_none ]
       Shield_none Jammer_none Comp_none Armor_titanium
       0 3
     ;
     (* FIGHTER *)
-      mk_shipdesign "" 15 0 Ship_hull_small 1
+      mk_shipdesign "" 15 0 Hull_small 1
       [ Weapon_laser; Weapon_none; Weapon_none; Weapon_none ]
       [ 1; 0; 0; 0 ]
       Engine_retros 30
-      [ Ship_special_none; Ship_special_none; Ship_special_none ]
+      [ Special_none; Special_none; Special_none ]
       Shield_none Jammer_none Comp_none Armor_titanium
       0 3
     ;
     (* DESTROYER *)
-      mk_shipdesign "" 66 0 Ship_hull_medium 6
+      mk_shipdesign "" 66 0 Hull_medium 6
       [ Weapon_nuclear_missile_2; Weapon_laser; Weapon_none; Weapon_none ]
       [ 1; 3; 0; 0 ]
       Engine_retros 115
-      [ Ship_special_none; Ship_special_none; Ship_special_none ]
+      [ Special_none; Special_none; Special_none ]
       Shield_none Jammer_none Comp_none Armor_titanium
       0 18
     ;
     (* BOMBER *)
-      mk_shipdesign "" 86 0 Ship_hull_medium 7
+      mk_shipdesign "" 86 0 Hull_medium 7
       [ Weapon_nuclear_bomb; Weapon_laser; Weapon_none; Weapon_none ]
       [ 2; 2; 0; 0 ]
       Engine_retros 90
-      [ Ship_special_none; Ship_special_none; Ship_special_none ]
+      [ Special_none; Special_none; Special_none ]
       Shield_none Jammer_none Comp_none Armor_titanium
       0 18
     ;
     (* COLONY SHIP *)
-      mk_shipdesign "" 591 0 Ship_hull_large 12
+      mk_shipdesign "" 591 0 Hull_large 12
       [ Weapon_none; Weapon_none; Weapon_none; Weapon_none ]
       [ 0; 0; 0; 0 ]
       Engine_retros 205
-      [ Ship_special_standard_colony_base; Ship_special_none; Ship_special_none ]
+      [ Special_standard_colony_base; Special_none; Special_none ]
       Shield_none Jammer_none Comp_none Armor_titanium
       0 100
     ;
     (* (unused) *)
-      mk_shipdesign "" 10 0 Ship_hull_small 0
+      mk_shipdesign "" 10 0 Hull_small 0
       [ Weapon_none; Weapon_none; Weapon_none; Weapon_none ]
       [ 0; 0; 0; 0 ]
       Engine_retros 10
-      [ Ship_special_none; Ship_special_none; Ship_special_none ]
+      [ Special_none; Special_none; Special_none ]
       Shield_none Jammer_none Comp_none Armor_titanium
       0 3
     ;

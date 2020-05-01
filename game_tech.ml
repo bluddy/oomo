@@ -40,36 +40,36 @@ let get_base_cost_mod_armor g player percent =
   let idx = if idx > 0 then idx - 1 else 0 in (* BUG? *)
   let mult = get_tech_reduce_50 percent in
   let armor = Shiptech.tbl_armor.(idx) in
-  let cost1 = (Shiptech.get_armor_hull armor Ship_hull_large).cost in
-  let cost2 = (Shiptech.hull_get Ship_hull_large).cost in
+  let cost1 = (Shiptech.get_armor_hull armor Hull_large).cost in
+  let cost2 = (Shiptech.get_hull Hull_large).cost in
   (cost1 + cost2) * mult / 1500
 
-let get_base_cost_mod_weap g tech_i percent =
+let get_base_cost_mod_weap g weapon_tech percent =
   let mult = get_tech_reduce_50 percent * 9 in
-  (Shiptech.tbl_weap.(tech_i).cost * mult) / 1000
+  ((Shiptech.get_weapon weapon_tech).cost * mult) / 1000
 
-let get_base_cost_mod_shield g tech_i percent =
+let get_base_cost_mod_shield g shield_tech percent =
   let mult = get_tech_reduce_50 percent in
-  let shield = Shiptech.tbl_shield.(tech_i) in
-  let hull_data = Shiptech.get_shield_hull shield Ship_hull_large in
+  let shield = Shiptech.get_shield shield_tech in
+  let hull_data = Shiptech.get_shield_hull shield Hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
-let get_base_cost_mod_comp g tech_i percent =
+let get_base_cost_mod_comp g comp_tech percent =
   let mult = get_tech_reduce_50 percent in
-  let comp = Shiptech.tbl_comp.(tech_i) in
-  let hull_data = Shiptech.get_comp_hull comp Ship_hull_large in
+  let comp = Shiptech.get_comp comp_tech in
+  let hull_data = Shiptech.get_comp_hull comp Hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
 let get_base_cost_mod_jammer g player percent =
   let tech_i =
-    Shiptech.jammer_foldi ~init:0
-      (fun i acc jammer ->
+    Shiptech.fold_jammer ~init:Shiptech.Jammer_none
+      (fun acc i jammer ->
         if player_has_tech g Tech_field_computer jammer.tech_i player then i
         else acc)
   in
   let mult = get_tech_reduce_50 percent in
-  let jammer = Shiptech.tbl_jammer.(tech_i) in
-  let hull_data = Shiptech.get_jammer_hull jammer Ship_hull_large in
+  let jammer = Shiptech.get_jammer tech_i in
+  let hull_data = Shiptech.get_jammer_hull jammer Hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
   (* Add a newtech event *)
@@ -264,4 +264,35 @@ let tech_share g field accepted from_dead =
           )
       end
   )
+
+let player_best_tech g field tech_base tech_step tech_max player =
+  (* Q:Why do we skip by a step here? *)
+  let tech_base_i = Tech.to_int tech_base in
+  let start = if tech_base_i >= 2 then tech_base_i else tech_step in
+  let iter_range =
+    (Iter.int_range_by ~step:tech_step start @@ tech_max - 1)
+  in
+  Iter.fold (fun acc tech_i ->
+      let tech = Tech.of_int tech_i in
+      if player_has_tech g field tech player then tech else acc)
+    Tech.none
+    iter_range
+
+let get_base_cost g player =
+  let eto = get_eto g player in
+  let percent_of field = (get_techdata eto field).percent in
+  let cost =
+    get_base_cost_mod_armor  g player          (percent_of Tech_field_construction) +
+    get_base_cost_mod_weap   g eto.base_weapon (percent_of Tech_field_weapon) +
+    get_base_cost_mod_shield g eto.base_shield (percent_of Tech_field_force_field) +
+    get_base_cost_mod_comp   g eto.base_comp   (percent_of Tech_field_computer) +
+    get_base_cost_mod_jammer g player          (percent_of Tech_field_computer)
+  in
+  let cost = (cost * 3) / 5 in
+  let cost =
+    if is_ai g player then
+      Ai.base_cost_reduce g player cost
+    else cost
+  in
+  if cost < 50 then 50 else cost
 

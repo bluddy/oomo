@@ -82,6 +82,7 @@ let tech_cost g _player =
   Num.get_tech_costmula g.difficulty
 
 let base_cost g player cost = 0
+let base_cost_reduce = base_cost
 
 let battle_ai_ai_get_weights g player tbl = 0
 

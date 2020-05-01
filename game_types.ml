@@ -126,9 +126,9 @@ type empire_tech_orbit = {
   total_production_bc: int;
   reserve_bc: int;
   tax: int;
-  base_shield: int;
-  base_comp: int;
-  base_weapon: int;
+  base_shield: Shiptech.shield;
+  base_comp: Shiptech.comp;
+  base_weapon: Shiptech.weapon;
   have_sub_space_int: bool;
   antidote: int;
   have_colony_for: Planet.planet_type;

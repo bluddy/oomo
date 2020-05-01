@@ -1,5 +1,6 @@
 open Types
 
+(* Computer tech *)
 type tech_comp =
   | Tech_comp_none
   | Tech_comp_battle_scanner
@@ -54,6 +55,9 @@ type tech_comp =
   | Tech_comp_battle_computer_mark_xi
   [@@deriving enum]
 
+let tech_comp_to_tech x = tech_comp_to_enum x |> Tech.of_int
+
+(* Construction tech *)
 type tech_cons =
   | Tech_cons_none
   | Tech_cons_reserve_fuel_tanks
@@ -108,6 +112,9 @@ type tech_cons =
   | Tech_cons_neutronium_armor
   [@@deriving enum]
 
+let tech_cons_to_tech x = tech_cons_to_enum x |> Tech.of_int
+
+(* Force field tech *)
 type tech_ffld =
   | Tech_ffld_none
   | Tech_ffld_class_i_deflector_shields
@@ -162,6 +169,9 @@ type tech_ffld =
   | Tech_ffld_class_xv_deflector_shields
   [@@deriving enum]
 
+let tech_ffld_to_tech x = tech_ffld_to_enum x |> Tech.of_int
+
+(* Planetary tech *)
 type tech_plan =
   | Tech_plan_none
   | Tech_plan_ecological_restoration
@@ -216,6 +226,9 @@ type tech_plan =
   | Tech_plan_complete_terraforming
   [@@deriving enum]
 
+let tech_plan_to_tech x = tech_plan_to_enum x |> Tech.of_int
+
+(* Propulsion tech *)
 type tech_prop =
   | Tech_prop_none
   | Tech_prop_retro_engines
@@ -270,6 +283,9 @@ type tech_prop =
   | Tech_prop_displacement_device
   [@@deriving enum]
 
+let tech_prop_to_tech x = tech_prop_to_enum x |> Tech.of_int
+
+(* Weapon tech *)
 type tech_weap =
   | Tech_weap_none
   | Tech_weap_lasers
@@ -323,3 +339,5 @@ type tech_weap =
   | Tech_weap_unused_48
   | Tech_weap_plasma_torpedoes
   [@@deriving enum]
+
+let tech_weap_to_tech x = tech_weap_to_enum x |> Tech.of_int

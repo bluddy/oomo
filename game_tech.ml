@@ -296,3 +296,15 @@ let get_base_cost g player =
   in
   if cost < 50 then 50 else cost
 
+let get_base_weapon g player tech =
+  Shiptech.fold_weapon (fun acc i weapon ->
+      if Tech.(weapon.tech <= tech) &&
+         weapon.damage_min = weapon.damage_max && (* BUG? *)
+         weapon.num_shots = 2 &&
+         weapon.miss_type = 0 &&
+         not weapon.is_bio &&
+         weapon.num_miss = 1 &&
+         player_has_tech g Tech_field_weapon weapon.tech player
+      then i else acc)
+    ~init:Weapon_laser (* BUG? *)
+

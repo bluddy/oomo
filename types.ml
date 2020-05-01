@@ -20,7 +20,18 @@ module Player : IntType_t = struct
   let (=) = eq
 end
 
-module Tech : IntType_t = struct
+module type TechType_t = sig
+  type t
+  val to_int: t -> int
+  val of_int: int -> t
+  val none: t
+  val compare: t -> t -> int
+  val eq: t -> t -> bool
+  val (=): t -> t -> bool
+  val (<=): t -> t -> bool
+end
+
+module Tech : TechType_t = struct
   type t = int
   let to_int (x:t) : int = x
   let of_int (x:int) : t = x
@@ -28,6 +39,7 @@ module Tech : IntType_t = struct
   let compare x y = (to_int x) - (to_int y)
   let eq x y = (to_int x) = (to_int y)
   let (=) = eq
+  let (<=) x y = compare x y <= 0
 end
 
 module TechSet = Set.Make(Tech)

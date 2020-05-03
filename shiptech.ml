@@ -241,7 +241,7 @@ type per_ship_hull = {
   cost: int;
 }
 
-type shiptech_comp = {
+type st_comp = {
   name: string;
   shiphull: per_ship_hull array; (* ship_hull_num *)
   tech: Tech.t;
@@ -258,7 +258,7 @@ let mk_comp name power_l space_l cost_l tech_i level =
   let tech = Tech.of_int tech_i in
   {name; tech; shiphull; level}
 
-type shiptech_jammer = {
+type st_jammer = {
   name: string;
   shiphull: per_ship_hull array; (* ship_hull_num *)
   tech_i: Tech.t;
@@ -275,7 +275,7 @@ let mk_jammer name power_l space_l cost_l tech_i level =
   let tech_i = Tech.of_int tech_i in
   {name; shiphull; tech_i; level}
 
-type shiptech_engine = {
+type st_engine = {
   name: string;
   power: int;
   space: int;
@@ -284,7 +284,7 @@ type shiptech_engine = {
   tech_i: Tech.t;
 }
 
-let mk_engine name power space cost warp tech_i : shiptech_engine =
+let mk_engine name power space cost warp tech_i : st_engine =
   let tech_i = Tech.of_int tech_i in
   {name; power; space; cost; warp; tech_i}
 
@@ -293,7 +293,7 @@ type armor_per_ship_hull = {
   space: int;
 }
 
-type shiptech_armor = {
+type st_armor = {
   name: string;
   shiphull: armor_per_ship_hull array;
   armor: int;
@@ -310,22 +310,22 @@ let mk_armor name cost_l space_l armor tech_i =
   let tech_i = Tech.of_int tech_i in
   {name; shiphull; armor; tech_i}
 
-type shiptech_shield = {
+type st_shield = {
   name: string;
   shiphull: per_ship_hull array;
   absorb: int;
-  tech_i: Tech.t;
+  tech: Tech.t;
 }
 
 let get_shield_hull shield hull = shield.shiphull.(hull_to_enum hull)
 
 let mk_shield name cost_l space_l power_l absorb tech_i =
-  let tech_i = Tech.of_int tech_i in
+  let tech = Tech.of_int tech_i in
   let shiphull =
     Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
     |> Array.of_list
   in
-  {name; shiphull; absorb; tech_i}
+  {name; shiphull; absorb; tech}
 
 (* boolean flags *)
 type ship_special_bool =
@@ -341,7 +341,7 @@ type ship_special_bool =
   | Ship_special_bool_disp
   [@@deriving enum]
 
-type shiptech_special = {
+type st_special = {
   name: string;
   extra_str: string;
   shiphull: per_ship_hull array;
@@ -367,7 +367,7 @@ let mk_special name extra_str cost_l space_l power_l tech field stype repair
   pulsar; stream; boolmask}
 
 
-type shiptech_hull = {
+type st_hull = {
   name: string;
   cost: int;
   space: int;
@@ -1031,6 +1031,10 @@ let tbl_shield = [|
 |]
 
 let get_shield x = tbl_shield.(shield_to_enum x)
+
+let fold_shield f ~init =
+  let g acc i x = f (Option.get_exn @@ shield_of_enum i) acc x in
+  Array.foldi g init tbl_shield
 
 let tbl_jammer = [|
   mk_jammer "NONE"        [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;

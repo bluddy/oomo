@@ -308,3 +308,22 @@ let get_base_weapon g player tech =
       then i else acc)
     ~init:Weapon_laser (* BUG? *)
 
+let get_base_weapon2 g player tech default =
+  Shiptech.fold_weapon
+  (fun acc i weapon ->
+    if weapon.num_miss > 1 &&
+       Shiptech.(weapon_to_enum i < weapon_to_enum Weapon_plasma_torpedo) &&
+       player_has_tech g Tech_field_weapon weapon.tech player
+      then i else acc)
+  ~init:default
+
+let get_best_shield g player tech =
+  let open Shiptech in
+  fold_shield (fun acc i shield ->
+    if Tech.(shield.tech <= tech) &&
+       player_has_tech g Tech_field_force_field shield.tech player
+    then i else acc)
+  ~init:Shield_none
+
+
+

@@ -342,7 +342,7 @@ type per_player = {
   seen: seen array; (* planets_max *)
   current_design: shipdesign;
   gaux: Game_aux.t;
-  eto: empire_tech_orbit;
+  mutable eto: empire_tech_orbit;
 }
 
 type locinfo = {
@@ -388,6 +388,11 @@ type t = {
 let fold_perplayer f g ~init = Array.foldi (fun acc i x -> f acc (Player.of_int i) x) init g.perplayer
 let iter_perplayer f g = Array.iteri (fun i x -> f (Player.of_int i) x) g.perplayer
 let get_eto g player = g.perplayer.(Player.to_int player).eto
+(* mutates eto *)
+let update_eto g player f =
+  let pp = g.perplayer.(Player.to_int player) in
+  pp.eto <- f (pp.eto)
+  
 let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)
 let get_t_perplayer g player = g.perplayer.(Player.to_int player)
 let is_ai g player = (get_t_perplayer g player).is_ai

@@ -1,7 +1,6 @@
 open Containers
 open Utils
 open Types
-open Techtypes
 
 (* Shiptech vs tech
  * Shiptech is individual weapons/systems, as opposed to tech, which is
@@ -126,6 +125,8 @@ type armor =
   [@@deriving enum]
 
 let armor_to_tech sh = Tech.of_int @@ armor_to_enum sh
+
+let prev_armor x = (armor_to_enum x) - 1 |> armor_of_enum |> Option.get_exn
 
 type shield =
   | Shield_none
@@ -261,7 +262,7 @@ let mk_comp name power_l space_l cost_l tech_i level =
 type st_jammer = {
   name: string;
   shiphull: per_ship_hull array; (* ship_hull_num *)
-  tech_i: Tech.t;
+  tech: Tech.t;
   level: int;
 }
 
@@ -272,8 +273,8 @@ let mk_jammer name power_l space_l cost_l tech_i level =
     Utils.map3 (fun power space cost -> {power; space; cost}) power_l space_l cost_l
     |> Array.of_list
   in
-  let tech_i = Tech.of_int tech_i in
-  {name; shiphull; tech_i; level}
+  let tech = Tech.of_int tech_i in
+  {name; shiphull; tech; level}
 
 type st_engine = {
   name: string;
@@ -281,12 +282,12 @@ type st_engine = {
   space: int;
   cost: int;
   warp: int;
-  tech_i: Tech.t;
+  tech: Tech.t;
 }
 
 let mk_engine name power space cost warp tech_i : st_engine =
-  let tech_i = Tech.of_int tech_i in
-  {name; power; space; cost; warp; tech_i}
+  let tech = Tech.of_int tech_i in
+  {name; power; space; cost; warp; tech}
 
 type armor_per_ship_hull = {
   cost: int;
@@ -297,7 +298,7 @@ type st_armor = {
   name: string;
   shiphull: armor_per_ship_hull array;
   armor: int;
-  tech_i: Tech.t;
+  tech: Tech.t;
 }
 
 let get_armor_hull armor hull = armor.shiphull.(hull_to_enum hull)
@@ -307,8 +308,8 @@ let mk_armor name cost_l space_l armor tech_i =
     List.map2 (fun cost space -> {cost; space}) cost_l space_l
     |> Array.of_list
   in
-  let tech_i = Tech.of_int tech_i in
-  {name; shiphull; armor; tech_i}
+  let tech = Tech.of_int tech_i in
+  {name; shiphull; armor; tech}
 
 type st_shield = {
   name: string;
@@ -385,7 +386,7 @@ let tbl_weapon = [|
     0 false false false
     0 1 0 (-1)
     0 0 0
-    false (tech_weap_to_tech Tech_weap_none)
+    false (Techtypes.weap_to_tech Techtypes.Weap_none)
     0 [0; 0; 0; 0; 0; 0; 0]
     0 0
   ;
@@ -394,7 +395,7 @@ let tbl_weapon = [|
     0 false true false
     0 1 1 10
     30 40 10
-    false (tech_weap_to_tech Tech_weap_lasers)
+    false (Techtypes.weap_to_tech Techtypes.Weap_lasers)
     0 [0x0; 0x0; 0x0; 0x0; 0x0; 0x0; 0x0]
     0x25 0
   ;
@@ -403,7 +404,7 @@ let tbl_weapon = [|
     0 false false false
     0 1 1 (-1)
     30 10 25
-    false (tech_weap_to_tech Tech_weap_lasers)
+    false (Techtypes.weap_to_tech Techtypes.Weap_lasers)
     0 [0x40; 0x41; 0x42; 0x43; 0x44; 0x45; 0x46]
     0x7 0
     ;
@@ -412,7 +413,7 @@ let tbl_weapon = [|
     0 false false false
     0 1 1 2
     70 50 20
-    false (tech_weap_to_tech Tech_weap_lasers)
+    false (Techtypes.weap_to_tech Techtypes.Weap_lasers)
     2 [ 0x60; 0x0; 0x0; 0x6; 0x50; 0x0; 0x0 ]
     0x8 1
     ;
@@ -421,7 +422,7 @@ let tbl_weapon = [|
     0 false false false
     0 1 1 5
     105 75 30
-    false (tech_weap_to_tech Tech_weap_lasers)
+    false (Techtypes.weap_to_tech Techtypes.Weap_lasers)
     2 [ 0x40; 0x0; 0x0; 0x6; 0x50; 0x0; 0x0 ]
     0x8 1
     ;
@@ -430,7 +431,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         90 30 75
-        false (tech_weap_to_tech Tech_weap_lasers)
+        false (Techtypes.weap_to_tech Techtypes.Weap_lasers)
         0 [0x40;0x41;0x42;0x43;0x44;0x45;0x46]
         0xa 0
     ;
@@ -439,7 +440,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 2
         90 70 20
-        false (tech_weap_to_tech Tech_weap_hyper_v_rockets)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hyper_v_rockets)
         2 [0x70;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
@@ -448,7 +449,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 5
         135 105 30
-        false (tech_weap_to_tech Tech_weap_hyper_v_rockets)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hyper_v_rockets)
         2 [0x50;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
@@ -457,7 +458,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 4 (-1)
         90 20 70
-        false (tech_weap_to_tech Tech_weap_gatling_laser)
+        false (Techtypes.weap_to_tech Techtypes.Weap_gatling_laser)
         0 [0x43;0x41;0x3f;0x25;0x3f;0x41;0x43]
         0x1 0
     ;
@@ -466,7 +467,7 @@ let tbl_weapon = [|
         0 true false false
         0 1 1 (-1)
         30 15 25
-        false (tech_weap_to_tech Tech_weap_neutron_pellet_gun)
+        false (Techtypes.weap_to_tech Techtypes.Weap_neutron_pellet_gun)
         0 [0x0;0xae;0x0;0x0;0x0;0xae;0x0]
         0x1 0
     ;
@@ -475,7 +476,7 @@ let tbl_weapon = [|
         1 false false false
         0 1 1 2
         120 100 20
-        false (tech_weap_to_tech Tech_weap_hyper_x_rockets)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hyper_x_rockets)
         2 [0x60;0x0;0x0;0x6;0x50;0x0;0x0]
         0x8 1
     ;
@@ -484,7 +485,7 @@ let tbl_weapon = [|
         1 false false false
         0 1 1 5
         180 150 30
-        false (tech_weap_to_tech Tech_weap_hyper_x_rockets)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hyper_x_rockets)
         2 [0x50;0x0;0x0;0x6;0x50;0x0;0x0]
         0x8 1
     ;
@@ -493,7 +494,7 @@ let tbl_weapon = [|
         0 false true false
         0 1 1 10
         30 50 10
-        false (tech_weap_to_tech Tech_weap_fusion_bomb)
+        false (Techtypes.weap_to_tech Techtypes.Weap_fusion_bomb)
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
@@ -502,7 +503,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         40 15 35
-        false (tech_weap_to_tech Tech_weap_ion_cannon)
+        false (Techtypes.weap_to_tech Techtypes.Weap_ion_cannon)
         1 [0xe4;0xe5;0xe6;0xe7;0xe6;0xe5;0xe4]
         0x10 0
     ;
@@ -511,7 +512,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         110 45 105
-        false (tech_weap_to_tech Tech_weap_ion_cannon)
+        false (Techtypes.weap_to_tech Techtypes.Weap_ion_cannon)
         1 [0xe4;0xe5;0xe6;0xe7;0xe6;0xe5;0xe4]
         0xf 0
     ;
@@ -520,7 +521,7 @@ let tbl_weapon = [|
         1 false false false
         0 1 1 2
         180 115 50
-        false (tech_weap_to_tech Tech_weap_scatter_pack_v_rockets)
+        false (Techtypes.weap_to_tech Techtypes.Weap_scatter_pack_v_rockets)
         2 [0x60;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 5
     ;
@@ -529,7 +530,7 @@ let tbl_weapon = [|
         1 false false false
         0 1 1 5
         270 170 80
-        false (tech_weap_to_tech Tech_weap_scatter_pack_v_rockets)
+        false (Techtypes.weap_to_tech Techtypes.Weap_scatter_pack_v_rockets)
         2 [0x50;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 5
     ;
@@ -538,7 +539,7 @@ let tbl_weapon = [|
         0 false true false
         0 1 1 5
         100 100 10
-        true (tech_plan_to_tech Tech_plan_death_spores)
+        true (Techtypes.plan_to_tech Techtypes.Plan_death_spores)
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
@@ -547,7 +548,7 @@ let tbl_weapon = [|
         0 true false false
         0 1 1 (-1)
         90 55 50
-        false (tech_weap_to_tech Tech_weap_mass_driver)
+        false (Techtypes.weap_to_tech Techtypes.Weap_mass_driver)
         0 [0x0;0xc;0x0;0x0;0x0;0xc;0x0]
         0x17 0
     ;
@@ -556,7 +557,7 @@ let tbl_weapon = [|
         2 false false false
         0 1 1 2
         130 105 20
-        false (tech_weap_to_tech Tech_weap_merculite_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_merculite_missiles)
         2 [0x80;0x0;0x0;0x4;0x78;0x0;0x0]
         0x8 1
     ;
@@ -565,7 +566,7 @@ let tbl_weapon = [|
         2 false false false
         0 1 1 5
         195 155 30
-        false (tech_weap_to_tech Tech_weap_merculite_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_merculite_missiles)
         2 [0x60;0x0;0x0;0x4;0x78;0x0;0x0]
         0x8 1
     ;
@@ -574,7 +575,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         60 20 60
-        false (tech_weap_to_tech Tech_weap_neutron_blaster)
+        false (Techtypes.weap_to_tech Techtypes.Weap_neutron_blaster)
         0 [0xcf;0xce;0xcd;0xcc;0xcb;0xca;0xc9]
         0xa 0
     ;
@@ -583,7 +584,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         180 60 180
-        false (tech_weap_to_tech Tech_weap_neutron_blaster)
+        false (Techtypes.weap_to_tech Techtypes.Weap_neutron_blaster)
         0 [0xcf;0xce;0xcd;0xcc;0xcb;0xca;0xc9]
         0x12 0
     ;
@@ -592,7 +593,7 @@ let tbl_weapon = [|
         0 false true false
         0 1 1 10
         50 75 10
-        false (tech_weap_to_tech Tech_weap_anti_matter_bomb)
+        false (Techtypes.weap_to_tech Techtypes.Weap_anti_matter_bomb)
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
@@ -601,7 +602,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         60 20 50
-        false (tech_weap_to_tech Tech_weap_graviton_beam)
+        false (Techtypes.weap_to_tech Techtypes.Weap_graviton_beam)
         2 [0xd1;0xd2;0xd3;0xd4;0xd5;0xd6;0xd7]
         0x0 1
     ;
@@ -610,7 +611,7 @@ let tbl_weapon = [|
         3 false false false
         0 1 1 2
         190 155 30
-        false (tech_weap_to_tech Tech_weap_stinger_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_stinger_missiles)
         2 [0x90;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
@@ -619,7 +620,7 @@ let tbl_weapon = [|
         3 false false false
         0 1 1 5
         270 230 45
-        false (tech_weap_to_tech Tech_weap_stinger_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_stinger_missiles)
         2 [0x70;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
@@ -628,7 +629,7 @@ let tbl_weapon = [|
         0 true false false
         0 1 1 (-1)
         120 50 100
-        false (tech_weap_to_tech Tech_weap_hard_beam)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hard_beam)
         0 [0xa1;0x96;0xa1;0x96;0xa1;0x96;0xa1]
         0x1 0
     ;
@@ -637,7 +638,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         70 20 75
-        false (tech_weap_to_tech Tech_weap_fusion_beam)
+        false (Techtypes.weap_to_tech Techtypes.Weap_fusion_beam)
         0 [0xb7;0xb6;0xb5;0xb4;0xb3;0xb2;0xb1]
         0xb 0
     ;
@@ -646,7 +647,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         210 60 225
-        false (tech_weap_to_tech Tech_weap_fusion_beam)
+        false (Techtypes.weap_to_tech Techtypes.Weap_fusion_beam)
         0 [0xb7;0xb6;0xb5;0xb4;0xb3;0xb2;0xb1]
         0x19 0
     ;
@@ -655,7 +656,7 @@ let tbl_weapon = [|
         0 false true false
         0 1 1 10
         80 140 10
-        false (tech_weap_to_tech Tech_weap_omega_v_bomb)
+        false (Techtypes.weap_to_tech Techtypes.Weap_omega_v_bomb)
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
@@ -664,7 +665,7 @@ let tbl_weapon = [|
         4 false false false
         1 1 1 (-1)
         300 75 300
-        false (tech_weap_to_tech Tech_weap_anti_matter_torpedoes)
+        false (Techtypes.weap_to_tech Techtypes.Weap_anti_matter_torpedoes)
         2 [0x80;0x0;0x0;0x3;0xa0;0x0;0x0]
         0x11 1
     ;
@@ -673,7 +674,7 @@ let tbl_weapon = [|
         3 false false false
         0 1 1 (-1)
         80 30 65
-        false (tech_weap_to_tech Tech_weap_megabolt_cannon)
+        false (Techtypes.weap_to_tech Techtypes.Weap_megabolt_cannon)
         3 [0xaf;0xd7;0xae;0xd7;0xaf;0xd7;0xae]
         0x12 0
     ;
@@ -682,7 +683,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         90 20 90
-        false (tech_weap_to_tech Tech_weap_phasor)
+        false (Techtypes.weap_to_tech Techtypes.Weap_phasor)
         1 [0xdb;0xdc;0xdd;0xde;0xdd;0xdc;0xdb]
         0x1c 0
     ;
@@ -691,7 +692,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         260 60 270
-        false (tech_weap_to_tech Tech_weap_phasor)
+        false (Techtypes.weap_to_tech Techtypes.Weap_phasor)
         1 [0xdb;0xdc;0xdd;0xde;0xdd;0xdc;0xdb]
         0x1a 0
     ;
@@ -700,7 +701,7 @@ let tbl_weapon = [|
         2 false false false
         0 1 1 2
         280 170 50
-        false (tech_weap_to_tech Tech_weap_scatter_pack_vii_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_scatter_pack_vii_missiles)
         2 [0x80;0x0;0x0;0x4;0x78;0x0;0x0]
         0x3 7
     ;
@@ -709,7 +710,7 @@ let tbl_weapon = [|
         2 false false false
         0 1 1 5
         420 230 80
-        false (tech_weap_to_tech Tech_weap_scatter_pack_vii_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_scatter_pack_vii_missiles)
         2 [0x60;0x0;0x0;0x4;0x78;0x0;0x0]
         0x3 7
     ;
@@ -718,7 +719,7 @@ let tbl_weapon = [|
         0 false true false
         0 1 1 5
         150 200 10
-        true (tech_plan_to_tech Tech_plan_doom_virus)
+        true (Techtypes.plan_to_tech Techtypes.Plan_doom_virus)
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x25 0
     ;
@@ -727,7 +728,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 3 (-1)
         140 30 90
-        false (tech_weap_to_tech Tech_weap_auto_blaster)
+        false (Techtypes.weap_to_tech Techtypes.Weap_auto_blaster)
         1 [0xbe;0xbd;0xbc;0xbb;0xba;0xb9;0xb8]
         0x1 0
     ;
@@ -736,7 +737,7 @@ let tbl_weapon = [|
         4 false false false
         0 1 1 2
         200 160 40
-        false (tech_weap_to_tech Tech_weap_pulson_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_pulson_missiles)
         2 [0xa0;0x0;0x0;0x4;0xa0;0x0;0x0]
         0x8 1
     ;
@@ -745,7 +746,7 @@ let tbl_weapon = [|
         4 false false false
         0 1 1 5
         300 240 60
-        false (tech_weap_to_tech Tech_weap_pulson_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_pulson_missiles)
         2 [0x80;0x0;0x0;0x4;0xa0;0x0;0x0]
         0x8 1
     ;
@@ -754,7 +755,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         90 30 70
-        false (tech_weap_to_tech Tech_weap_tachyon_beam)
+        false (Techtypes.weap_to_tech Techtypes.Weap_tachyon_beam)
         2 [0x8e;0x8c;0x8b;0x8a;0x89;0x88;0x87]
         0x1f 1
     ;
@@ -763,7 +764,7 @@ let tbl_weapon = [|
         0 true false false
         0 1 4 (-1)
         280 105 105
-        false (tech_weap_to_tech Tech_weap_gauss_autocannon)
+        false (Techtypes.weap_to_tech Techtypes.Weap_gauss_autocannon)
         0 [0x0;0xf;0x0;0x12;0x0;0x15;0x0]
         0x1 0
     ;
@@ -772,7 +773,7 @@ let tbl_weapon = [|
         0 true false false
         0 1 1 (-1)
         150 90 75
-        false (tech_weap_to_tech Tech_weap_particle_beam)
+        false (Techtypes.weap_to_tech Techtypes.Weap_particle_beam)
         0 [0x0;0xf;0x0;0x12;0x0;0x15;0x0]
         0x21 0
     ;
@@ -781,7 +782,7 @@ let tbl_weapon = [|
         5 false false false
         0 1 1 2
         260 220 40
-        false (tech_weap_to_tech Tech_weap_hercular_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hercular_missiles)
         2 [0xb0;0x0;0x0;0x6;0x64;0x0;0x0]
         0x8 1
     ;
@@ -790,7 +791,7 @@ let tbl_weapon = [|
         5 false false false
         0 1 1 5
         390 330 60
-        false (tech_weap_to_tech Tech_weap_hercular_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hercular_missiles)
         2 [0x90;0x0;0x0;0x6;0x64;0x0;0x0]
         0x8 1
     ;
@@ -799,7 +800,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         120 30 100
-        false (tech_weap_to_tech Tech_weap_plasma_cannon)
+        false (Techtypes.weap_to_tech Techtypes.Weap_plasma_cannon)
         2 [0x46;0x45;0x44;0x43;0x44;0x45;0x46]
         0x1e 0
     ;
@@ -808,7 +809,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         210 70 160
-        false (tech_weap_to_tech Tech_weap_disruptor)
+        false (Techtypes.weap_to_tech Techtypes.Weap_disruptor)
         0 [0xf7;0xf6;0xf5;0xf4;0xf3;0xf2;0xf1]
         0x1c 0
     ;
@@ -817,7 +818,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 3 (-1)
         250 40 120
-        false (tech_weap_to_tech Tech_weap_pulse_phasor)
+        false (Techtypes.weap_to_tech Techtypes.Weap_pulse_phasor)
         1 [0xdb;0xdc;0xdd;0xde;0xdd;0xdc;0xdb]
         0x1 0
     ;
@@ -826,7 +827,7 @@ let tbl_weapon = [|
         0 false true false
         0 1 1 10
         90 200 10
-        false (tech_weap_to_tech Tech_weap_neutronium_bomb)
+        false (Techtypes.weap_to_tech Techtypes.Weap_neutronium_bomb)
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x14 0
     ;
@@ -835,7 +836,7 @@ let tbl_weapon = [|
         0 false true false
         0 1 1 5
         200 300 10
-        true (tech_plan_to_tech Tech_plan_bio_terminator)
+        true (Techtypes.plan_to_tech Techtypes.Plan_bio_terminator)
         0 [0x0;0x0;0x0;0x0;0x0;0x0;0x0]
         0x14 0
     ;
@@ -844,7 +845,7 @@ let tbl_weapon = [|
         6 false false false
         2 4 1 (-1)
         500 150 350
-        false (tech_weap_to_tech Tech_weap_hellfire_torpedoes)
+        false (Techtypes.weap_to_tech Techtypes.Weap_hellfire_torpedoes)
         2 [0xa0;0x0;0x0;0x4;0x8c;0x0;0x0]
         0x11 1
     ;
@@ -853,7 +854,7 @@ let tbl_weapon = [|
         6 false false false
         0 1 1 2
         300 250 50
-        false (tech_weap_to_tech Tech_weap_zeon_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_zeon_missiles)
         2 [0xc0;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
@@ -862,7 +863,7 @@ let tbl_weapon = [|
         6 false false false
         0 1 1 5
         450 375 75
-        false (tech_weap_to_tech Tech_weap_zeon_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_zeon_missiles)
         2 [0xa0;0x0;0x0;0x5;0x64;0x0;0x0]
         0x8 1
     ;
@@ -871,7 +872,7 @@ let tbl_weapon = [|
         6 false false false
         3 1 1 (-1)
         500 100 400
-        false (tech_weap_to_tech Tech_weap_proton_torpedoes)
+        false (Techtypes.weap_to_tech Techtypes.Weap_proton_torpedoes)
         2 [0xff;0x0;0x0;0x3;0xc8;0x0;0x0]
         0x11 1
     ;
@@ -880,7 +881,7 @@ let tbl_weapon = [|
         3 false false false
         0 1 1 2
         300 250 50
-        false (tech_weap_to_tech Tech_weap_scatter_pack_x_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_scatter_pack_x_missiles)
         2 [0x90;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 10
     ;
@@ -889,7 +890,7 @@ let tbl_weapon = [|
         3 false false false
         0 1 1 5
         450 420 80
-        false (tech_weap_to_tech Tech_weap_scatter_pack_x_missiles)
+        false (Techtypes.weap_to_tech Techtypes.Weap_scatter_pack_x_missiles)
         2 [0x70;0x0;0x0;0x5;0x64;0x0;0x0]
         0x3 10
     ;
@@ -898,7 +899,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         250 70 180
-        false (tech_weap_to_tech Tech_weap_tri_focus_plasma_cannon)
+        false (Techtypes.weap_to_tech Techtypes.Weap_tri_focus_plasma_cannon)
         1 [0x46;0x45;0x44;0x43;0x44;0x45;0x46]
         0x1b 0
     ;
@@ -907,7 +908,7 @@ let tbl_weapon = [|
         0 false false false
         0 4 1 (-1)
         500 200 300
-        false (tech_weap_to_tech Tech_weap_stellar_converter)
+        false (Techtypes.weap_to_tech Techtypes.Weap_stellar_converter)
         3 [0x49;0x56;0x71;0x46;0x49;0x56;0x71]
         0x15 0
     ;
@@ -916,7 +917,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         550 150 300
-        false (tech_weap_to_tech Tech_weap_mauler_device)
+        false (Techtypes.weap_to_tech Techtypes.Weap_mauler_device)
         4 [0xbb;0xbc;0xbd;0xbd;0xbd;0xbc;0xbb]
         0x23 0
     ;
@@ -925,7 +926,7 @@ let tbl_weapon = [|
         7 false false true
         4 1 1 (-1)
         600 150 450
-        false (tech_weap_to_tech Tech_weap_plasma_torpedoes)
+        false (Techtypes.weap_to_tech Techtypes.Weap_plasma_torpedoes)
         2 [0xc0;0x0;0x0;0x3;0xa0;0x0;0x0]
         0x11 1
     ;
@@ -943,7 +944,7 @@ let tbl_weapon = [|
         0 false false false
         0 1 1 (-1)
         1000 2000 2000
-        false (tech_weap_to_tech Tech_weap_death_ray)
+        false (Techtypes.weap_to_tech Techtypes.Weap_death_ray)
         4 [0xcb;0xc5;0xc4;0x46;0xc4;0xc5;0xcb]
         0x1d 0
     ;
@@ -980,6 +981,10 @@ let tbl_comp = [|
 
 let get_comp x = tbl_comp.(comp_to_enum x)
 
+let fold_comp f ~init =
+  let g acc i x = f (Option.get_exn @@ comp_of_enum i) acc x in
+  Array.foldi g init tbl_comp
+
 let tbl_engine = [|
    mk_engine "RETROS" 10 10 20 1 1 ;
    mk_engine "NUCLEAR" 20 18 40 2 6 ;
@@ -1013,7 +1018,9 @@ let tbl_armor = [|
 
 let get_armor x = tbl_armor.(armor_to_enum x)
 
-let armor_foldi f ~init = Array.foldi f init tbl_armor
+let fold_armor f ~init =
+  let g acc i x = f (Option.get_exn @@ armor_of_enum i) acc x in
+  Array.foldi g init tbl_armor
 
 let tbl_shield = [|
   mk_shield "NONE" [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] [ 0; 0; 0; 0 ] 0 0;
@@ -1070,7 +1077,7 @@ let tbl_special = [|
         [ 0; 0; 0; 0 ]
         [ 0; 0; 0; 0 ]
         [ 0; 0; 0; 0 ]
-        (tech_cons_to_tech Tech_cons_none) Tech_field_construction 0
+        (Techtypes.cons_to_tech Techtypes.Cons_none) Tech_field_construction 0
         0 0 0 0 0 0
         0
     ;
@@ -1078,7 +1085,7 @@ let tbl_special = [|
         [ 20; 100; 500; 2500 ]
         [ 20; 100; 500; 2500 ]
         [ 0; 0; 0; 0 ]
-        (tech_cons_to_tech Tech_cons_reserve_fuel_tanks) Tech_field_construction 1
+        (Techtypes.cons_to_tech Techtypes.Cons_reserve_fuel_tanks) Tech_field_construction 1
         0 0 0 0 0 0
         0
     ;
@@ -1086,7 +1093,7 @@ let tbl_special = [|
         [ 3500; 3500; 3500; 3500 ]
         [ 700; 700; 700; 700 ]
         [ 0; 0; 0; 0 ]
-        (tech_plan_to_tech Tech_plan_ecological_restoration) Tech_field_planetology 2
+        (Techtypes.plan_to_tech Techtypes.Plan_ecological_restoration) Tech_field_planetology 2
         0 0 0 0 0 0
         0
     ;
@@ -1094,7 +1101,7 @@ let tbl_special = [|
         [ 3750; 3750; 3750; 3750 ]
         [ 700; 700; 700; 700 ]
         [ 0; 0; 0; 0 ]
-        (tech_plan_to_tech Tech_plan_controlled_barren_environment) Tech_field_planetology 2
+        (Techtypes.plan_to_tech Techtypes.Plan_controlled_barren_env) Tech_field_planetology 2
         0 0 0 0 0 0
         0
     ;
@@ -1102,7 +1109,7 @@ let tbl_special = [|
         [ 4000; 4000; 4000; 4000 ]
         [ 700; 700; 700; 700 ]
         [ 0; 0; 0; 0 ]
-        (tech_plan_to_tech Tech_plan_controlled_tundra_environment) Tech_field_planetology 2
+        (Techtypes.plan_to_tech Techtypes.Plan_controlled_tundra_env) Tech_field_planetology 2
         0 0 0 0 0 0
         0
     ;
@@ -1110,7 +1117,7 @@ let tbl_special = [|
         [ 4250; 4250; 4250; 4250 ]
         [ 700; 700; 700; 700 ]
         [ 0; 0; 0; 0 ]
-        (tech_plan_to_tech Tech_plan_controlled_dead_environment) Tech_field_planetology 2
+        (Techtypes.plan_to_tech Techtypes.Plan_controlled_dead_env) Tech_field_planetology 2
         0 0 0 0 0 0
         0
     ;
@@ -1118,7 +1125,7 @@ let tbl_special = [|
         [ 4500; 4500; 4500; 4500 ]
         [ 700; 700; 700; 700 ]
         [ 0; 0; 0; 0 ]
-        (tech_plan_to_tech Tech_plan_controlled_inferno_environment) Tech_field_planetology 2
+        (Techtypes.plan_to_tech Techtypes.Plan_controlled_inferno_env) Tech_field_planetology 2
         0 0 0 0 0 0
         0
     ;
@@ -1126,7 +1133,7 @@ let tbl_special = [|
         [ 4750; 4750; 4750; 4750 ]
         [ 700; 700; 700; 700 ]
         [ 0; 0; 0; 0 ]
-        (tech_plan_to_tech Tech_plan_controlled_toxic_environment) Tech_field_planetology 2
+        (Techtypes.plan_to_tech Techtypes.Plan_controlled_toxic_env) Tech_field_planetology 2
         0 0 0 0 0 0
         0
     ;
@@ -1134,7 +1141,7 @@ let tbl_special = [|
         [ 5000; 5000; 5000; 5000 ]
         [ 700; 700; 700; 700 ]
         [ 0; 0; 0; 0 ]
-        (tech_plan_to_tech Tech_plan_controlled_radiated_environment) Tech_field_planetology 2
+        (Techtypes.plan_to_tech Techtypes.Plan_controlled_radiated_env) Tech_field_planetology 2
         0 0 0 0 0 0
         0
     ;
@@ -1142,7 +1149,7 @@ let tbl_special = [|
         [ 300; 300; 300; 300 ]
         [ 50; 50; 50; 50 ]
         [ 50; 50; 50; 50 ]
-        (tech_comp_to_tech Tech_comp_battle_scanner) Tech_field_computer 3
+        (Techtypes.comp_to_tech Techtypes.Comp_battle_scanner) Tech_field_computer 3
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_scanner))
     ;
@@ -1150,7 +1157,7 @@ let tbl_special = [|
         [ 100; 100; 100; 100 ]
         [ 2; 10; 50; 250 ]
         [ 8; 40; 200; 1000 ]
-        (tech_weap_to_tech Tech_weap_anti_missile_rockets) Tech_field_weapon 4
+        (Techtypes.weap_to_tech Techtypes.Weap_anti_missile_rockets) Tech_field_weapon 4
         0 0 40 0 0 0
         0
     ;
@@ -1158,7 +1165,7 @@ let tbl_special = [|
         [ 550; 550; 550; 550 ]
         [ 100; 100; 100; 100 ]
         [ 200; 200; 200; 200 ]
-        (tech_ffld_to_tech Tech_ffld_repulsor_beam) Tech_field_force_field 5
+        (Techtypes.ffld_to_tech Techtypes.Ffld_repulsor_beam) Tech_field_force_field 5
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_repulsor))
     ;
@@ -1166,7 +1173,7 @@ let tbl_special = [|
         [ 650; 650; 650; 650 ]
         [ 100; 100; 100; 100 ]
         [ 300; 300; 300; 300 ]
-        (tech_prop_to_tech Tech_prop_warp_dissipator) Tech_field_propulsion 6
+        (Techtypes.prop_to_tech Techtypes.Prop_warp_dissipator) Tech_field_propulsion 6
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_warpdis))
     ;
@@ -1174,7 +1181,7 @@ let tbl_special = [|
         [ 750; 750; 750; 750 ]
         [ 150; 150; 150; 150 ]
         [ 250; 250; 250; 250 ]
-        (tech_prop_to_tech Tech_prop_energy_pulsar) Tech_field_propulsion 7
+        (Techtypes.prop_to_tech Techtypes.Prop_energy_pulsar) Tech_field_propulsion 7
         0 0 0 0 1 0
         0
     ;
@@ -1182,7 +1189,7 @@ let tbl_special = [|
         [ 20; 75; 500; 2700 ]
         [ 4; 20; 100; 500 ]
         [ 8; 40; 200; 1000 ]
-        (tech_prop_to_tech Tech_prop_inertial_stabilizer) Tech_field_propulsion 8
+        (Techtypes.prop_to_tech Techtypes.Prop_inertial_stabilizer) Tech_field_propulsion 8
         0 2 0 0 0 0
         0
     ;
@@ -1190,7 +1197,7 @@ let tbl_special = [|
         [ 50; 100; 200; 300 ]
         [ 4; 20; 100; 500 ]
         [ 12; 60; 300; 1500 ]
-        (tech_ffld_to_tech Tech_ffld_zyro_shield) Tech_field_force_field 4
+        (Techtypes.ffld_to_tech Techtypes.Ffld_zyro_shield) Tech_field_force_field 4
         0 0 75 0 0 0
         0
     ;
@@ -1198,7 +1205,7 @@ let tbl_special = [|
         [ 2; 8; 50; 300 ]
         [ 3; 15; 100; 600 ]
         [ 3; 10; 50; 300 ]
-        (tech_cons_to_tech Tech_cons_automated_repair_system) Tech_field_construction 9
+        (Techtypes.cons_to_tech Techtypes.Cons_automated_repair_system) Tech_field_construction 9
         15 0 0 0 0 0
         0
     ;
@@ -1206,7 +1213,7 @@ let tbl_special = [|
         [ 2500; 2500; 2500; 2500 ]
         [ 200; 200; 200; 200 ]
         [ 275; 275; 275; 275 ]
-        (tech_ffld_to_tech Tech_ffld_stasis_field) Tech_field_force_field 10
+        (Techtypes.ffld_to_tech Techtypes.Ffld_stasis_field) Tech_field_force_field 10
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_stasis))
     ;
@@ -1214,7 +1221,7 @@ let tbl_special = [|
         [ 30; 150; 750; 3750 ]
         [ 5; 25; 120; 600 ]
         [ 10; 50; 250; 1250 ]
-        (tech_ffld_to_tech Tech_ffld_cloaking_device) Tech_field_force_field 11
+        (Techtypes.ffld_to_tech Techtypes.Ffld_cloaking_device) Tech_field_force_field 11
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_cloak))
     ;
@@ -1222,7 +1229,7 @@ let tbl_special = [|
         [ 1000; 1000; 1000; 1000 ]
         [ 250; 250; 250; 250 ]
         [ 500; 500; 500; 500 ]
-        (tech_weap_to_tech Tech_weap_ion_stream_projector) Tech_field_weapon 12
+        (Techtypes.weap_to_tech Techtypes.Weap_ion_stream_projector) Tech_field_weapon 12
         0 0 0 0 0 1
         0
     ;
@@ -1230,7 +1237,7 @@ let tbl_special = [|
         [ 30; 135; 625; 3500 ]
         [ 35; 100; 150; 500 ]
         [ 65; 200; 350; 1000 ]
-        (tech_prop_to_tech Tech_prop_high_energy_focus) Tech_field_propulsion 13
+        (Techtypes.prop_to_tech Techtypes.Prop_high_energy_focus) Tech_field_propulsion 13
         0 0 0 3 0 0
         0
     ;
@@ -1238,7 +1245,7 @@ let tbl_special = [|
         [ 1500; 1500; 1500; 1500 ]
         [ 400; 400; 400; 400 ]
         [ 750; 750; 750; 750 ]
-        (tech_prop_to_tech Tech_prop_ionic_pulsar) Tech_field_propulsion 7
+        (Techtypes.prop_to_tech Techtypes.Prop_ionic_pulsar) Tech_field_propulsion 7
         0 0 0 0 2 0
         0
     ;
@@ -1246,7 +1253,7 @@ let tbl_special = [|
         [ 2750; 2750; 2750; 2750 ]
         [ 750; 750; 750; 750 ]
         [ 750; 750; 750; 750 ]
-        (tech_ffld_to_tech Tech_ffld_black_hole_generator) Tech_field_force_field 14
+        (Techtypes.ffld_to_tech Techtypes.Ffld_black_hole_generator) Tech_field_force_field 14
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_blackhole))
     ;
@@ -1254,7 +1261,7 @@ let tbl_special = [|
         [ 25; 100; 450; 2250 ]
         [ 4; 20; 100; 500 ]
         [ 16; 80; 400; 2000 ]
-        (tech_prop_to_tech Tech_prop_sub_space_teleporter) Tech_field_propulsion 15
+        (Techtypes.prop_to_tech Techtypes.Prop_sub_space_teleporter) Tech_field_propulsion 15
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_subspace))
     ;
@@ -1262,7 +1269,7 @@ let tbl_special = [|
         [ 200; 300; 400; 500 ]
         [ 6; 30; 150; 750 ]
         [ 15; 70; 350; 1750 ]
-        (tech_ffld_to_tech Tech_ffld_lightning_shield) Tech_field_force_field 4
+        (Techtypes.ffld_to_tech Techtypes.Ffld_lightning_shield) Tech_field_force_field 4
         0 0 100 0 0 0
         0
     ;
@@ -1270,7 +1277,7 @@ let tbl_special = [|
         [ 2000; 2000; 2000; 2000 ]
         [ 500; 500; 500; 500 ]
         [ 1250; 1250; 1250; 1250 ]
-        (tech_weap_to_tech Tech_weap_neutron_stream_projector) Tech_field_weapon 16
+        (Techtypes.weap_to_tech Techtypes.Weap_neutron_stream_projector) Tech_field_weapon 16
         0 0 0 0 0 2
         0
     ;
@@ -1278,7 +1285,7 @@ let tbl_special = [|
         [ 40; 200; 1000; 5000 ]
         [ 9; 45; 300; 1800 ]
         [ 9; 30; 150; 450 ]
-        (tech_cons_to_tech Tech_cons_advanced_damage_control) Tech_field_construction 9
+        (Techtypes.cons_to_tech Techtypes.Cons_advanced_damage_control) Tech_field_construction 9
         30 0 0 0 0 0
         0
     ;
@@ -1286,7 +1293,7 @@ let tbl_special = [|
         [ 3000; 3000; 3000; 3000 ]
         [ 750; 750; 750; 750 ]
         [ 1000; 1000; 1000; 1000 ]
-        (tech_comp_to_tech Tech_comp_technology_nullifier) Tech_field_computer 17
+        (Techtypes.comp_to_tech Techtypes.Comp_technology_nullifier) Tech_field_computer 17
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_technull))
     ;
@@ -1294,7 +1301,7 @@ let tbl_special = [|
         [ 60; 200; 1500; 5000 ]
         [ 6; 30; 150; 750 ]
         [ 12; 60; 300; 1500 ]
-        (tech_prop_to_tech Tech_prop_inertial_nullifier) Tech_field_propulsion 8
+        (Techtypes.prop_to_tech Techtypes.Prop_inertial_nullifier) Tech_field_propulsion 8
         0 4 0 0 0 0
         0
     ;
@@ -1302,7 +1309,7 @@ let tbl_special = [|
         [ 30; 150; 600; 2750 ]
         [ 8; 40; 200; 1000 ]
         [ 12; 60; 300; 1500 ]
-        (tech_comp_to_tech Tech_comp_oracle_interface) Tech_field_computer 20
+        (Techtypes.comp_to_tech Techtypes.Comp_oracle_interface) Tech_field_computer 20
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_oracle))
     ;
@@ -1310,7 +1317,7 @@ let tbl_special = [|
         [ 30; 150; 300; 2750 ]
         [ 10; 50; 225; 1250 ]
         [ 10; 50; 225; 1250 ]
-        (tech_prop_to_tech Tech_prop_displacement_device) Tech_field_propulsion 21
+        (Techtypes.prop_to_tech Techtypes.Prop_displacement_device) Tech_field_propulsion 21
         0 0 0 0 0 0
         (1 lsl (ship_special_bool_to_enum Ship_special_bool_disp))
     ;

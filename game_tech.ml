@@ -30,18 +30,25 @@ let player_has_tech g field tech player =
   let research = get_research_completed eto field in
   TechSet.mem tech research
 
+let get_best_armor g player tech =
+  let open Shiptech in
+  fold_armor (fun acc i armor ->
+    if Tech.(armor.tech <= tech) &&
+       player_has_tech g Tech_field_construction armor.tech player
+    then i else acc)
+  ~init:Armor_titanium
+
 let get_base_cost_mod_armor g player percent =
-  let idx =
-    Shiptech.armor_foldi ~init:0
-      (fun i acc ship_armor ->
-        if player_has_tech g Tech_field_construction ship_armor.tech_i player
-        then i else acc)
+  let open Shiptech in
+  let idx = get_best_armor g player Tech.max in
+  let idx = match idx with
+    | Armor_titanium -> Armor_titanium
+    | _ -> prev_armor idx (* BUG? *)
   in
-  let idx = if idx > 0 then idx - 1 else 0 in (* BUG? *)
   let mult = get_tech_reduce_50 percent in
-  let armor = Shiptech.tbl_armor.(idx) in
-  let cost1 = (Shiptech.get_armor_hull armor Hull_large).cost in
-  let cost2 = (Shiptech.get_hull Hull_large).cost in
+  let armor = get_armor idx in
+  let cost1 = (get_armor_hull armor Hull_large).cost in
+  let cost2 = (get_hull Hull_large).cost in
   (cost1 + cost2) * mult / 1500
 
 let get_base_cost_mod_weap g weapon_tech percent =
@@ -60,15 +67,19 @@ let get_base_cost_mod_comp g comp_tech percent =
   let hull_data = Shiptech.get_comp_hull comp Hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
+
+let get_best_jammer g player tech =
+  let open Shiptech in
+  fold_jammer (fun acc i jammer ->
+    if Tech.(jammer.tech <= tech) &&
+       player_has_tech g Tech_field_computer jammer.tech player
+    then i else acc)
+  ~init:Jammer_none
+
 let get_base_cost_mod_jammer g player percent =
-  let tech_i =
-    Shiptech.fold_jammer ~init:Shiptech.Jammer_none
-      (fun acc i jammer ->
-        if player_has_tech g Tech_field_computer jammer.tech_i player then i
-        else acc)
-  in
+  let idx = get_best_jammer g player Tech.max in
   let mult = get_tech_reduce_50 percent in
-  let jammer = Shiptech.get_jammer tech_i in
+  let jammer = Shiptech.get_jammer idx in
   let hull_data = Shiptech.get_jammer_hull jammer Hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
@@ -324,6 +335,45 @@ let get_best_shield g player tech =
        player_has_tech g Tech_field_force_field shield.tech player
     then i else acc)
   ~init:Shield_none
+
+let get_best_comp g player tech =
+  let open Shiptech in
+  fold_comp (fun acc i comp ->
+    if Tech.(comp.tech <= tech) &&
+       player_has_tech g Tech_field_computer comp.tech player
+    then i else acc)
+  ~init:Comp_none
+
+let update_tech_util g =
+  iter_perplayer (fun player perplayer ->
+    let eto = get_eto g player in
+    let matches =
+      let open Techtypes in
+      let open Planet in [
+        plan_to_tech Plan_controlled_barren_env, Barren;
+        plan_to_tech Plan_controlled_tundra_env, Tundra;
+        plan_to_tech Plan_controlled_dead_env, Dead;
+        plan_to_tech Plan_controlled_inferno_env, Inferno;
+        plan_to_tech Plan_controlled_toxic_env, Toxic;
+        plan_to_tech Plan_controlled_radiated_env, Radiated;
+      ]
+    in
+    let have_colony_for =
+      List.fold_left (fun acc (tech, planet) ->
+        if player_has_tech g Tech_field_planetology tech player
+        then planet else acc)
+      Planet.Minimal
+      matches
+    in
+    let have_colony_for = match eto.race with
+      | Silicoid -> Planet.Radiated | _ -> have_colony_for
+    in
+    let have_adv_soil_enrich =
+      player_has_tech g Tech_field_planetology
+        Techtypes.(plan_to_tech Plan_advanced_soil_enrichment) player
+    in
+    ()
+  )
 
 
 

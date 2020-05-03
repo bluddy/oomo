@@ -29,6 +29,7 @@ module type TechType_t = sig
   val eq: t -> t -> bool
   val (=): t -> t -> bool
   val (<=): t -> t -> bool
+  val max : t
 end
 
 module Tech : TechType_t = struct
@@ -40,6 +41,7 @@ module Tech : TechType_t = struct
   let eq x y = (to_int x) = (to_int y)
   let (=) = eq
   let (<=) x y = compare x y <= 0
+  let max = 50
 end
 
 module TechSet = Set.Make(Tech)

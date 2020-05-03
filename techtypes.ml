@@ -273,7 +273,7 @@ type prop =
   | Prop_ionic_pulsar
   | Prop_thorium_cells
   | Prop_inter_phased_drives
-  | Prop_sub_space_interdiction
+  | Prop_sub_space_interdictor
   | Prop_unused_43
   | Prop_combat_transporters
   | Prop_inertial_nullifier

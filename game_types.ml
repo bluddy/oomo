@@ -33,10 +33,13 @@ type fleet_orbit = {
   ships: int list; (* NUM_SHIPDESIGNS *)
 }
 
+type slider = {
+  value: int;
+  locked: bool;
+}
+
 type techdata = {
   percent: int; (* tech level % *)
-  slider: int;
-  slider_lock: bool;
   investment: int;
   project: Tech.t; (* current project *)
   cost: int;
@@ -151,6 +154,7 @@ type empire_tech_orbit = {
   fuel_range: int; (* 3..10, 30 *)
   have_combat_transporter: bool;
   tech: techdata array; (* NUM_FIELDS *)
+  tech_sliders: slider array; (* NUM_FIELDS *)
   have_engine: int; (* 1.. *)
   shipdesigns_num: int;
   orbit: fleet_orbit list; (* PLANETS_MAX *)
@@ -159,6 +163,7 @@ type empire_tech_orbit = {
 }
 
 let get_techdata eto field = eto.tech.(tech_field_to_enum field)
+let get_techslider eto field = eto.tech_sliders.(tech_field_to_enum field)
 
 let update_techdata eto field f =
   let tech = eto.tech in

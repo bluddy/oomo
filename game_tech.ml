@@ -524,4 +524,76 @@ let get_newtech_msg g player newtech =
       let target_race = (get_eto g @@ Player.of_int newtech.v06).race in
       sp "%s %s %s %s" (get_race target_race) nt_reveal (get_te_field newtech.field) nt_secrets
 
+let current_research_common eto field f =
+  let td = get_techdata eto field in
+  let slider = (get_techslider eto field).value in
+  let cost, invest = td.cost, td.investment in
+  if cost = 0 || slider = 0 then 0
+  else
+    let t1 = invest * 3 / 20 in
+    (* percent invested *)
+    let t3 = slider * eto.total_research_bc / 100 in
+    let t1 = if t3 * 2 < t1 then t3 * 2 else t1 in
+    let invest = invest + t3 + t1 in
+    f invest cost
+
+let current_research_percent1 eto field =
+  current_research_common eto field (fun invest cost ->
+    let percent = invest * 100 / cost in
+    percent)
+
+let current_research_percent2 eto field =
+  current_research_common eto field (fun invest cost ->
+    if invest <= cost then 0
+    else
+      let percent = (invest - cost) * 50 / cost in
+      set_range percent 0 99)
+
+let current_research_has_max_bonus eto field =
+  let td = get_techdata eto field in
+  let slider = (get_techslider eto field).value in
+  let cost, invest = td.cost, td.investment in
+  if cost = 0 || slider = 0 then false
+  else
+    let t1 = invest * 3 / 20 in
+    (* percent invested *)
+    let t3 = slider * eto.total_research_bc / 100 in
+    t1 <= t3 * 2 && t3 > 0
+
+let current_research_time_score eto field =
+  let td = get_techdata eto field in
+  let f = current_research_percent1 eto field in
+  let s =
+    if f < 100 then
+      122 * f
+    else if not @@ current_research_has_max_bonus eto field then
+      let g = f - 100 in
+      g * g
+    else
+      let g = 2 * f - 100 in
+      g * g
+  in
+  s * td.cost
+
+  (*
+let set_to_max_bonus eto field =
+  let had_bonus = current_research_has_max_bonus eto field in
+  let techdata = get_techdata eto field in
+  let rec adjust () =
+    let v = t.slider in
+    let prev = v in
+    let v = if had_bonus then v - 1 else v + 1 in
+    techdata.slider <- v;
+    adjust_slider_group techdata.slider field v t.slider_lock;
+    let has_bonus = current_research_has_max_bonux e field in
+    if has_bonus <> had_bonus || v = prev then ()
+    else adjust ()
+    *)
+
+
+
+
+
+
+
 

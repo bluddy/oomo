@@ -64,7 +64,7 @@ type race =
   | Human | Mrrshan | Silicoid
   | Sakkra | Psilon | Alkari
   | Klackon | Bulrathi | Meklar
-  | Darlok
+  | Darlok | RandomRace
   [@@ deriving enum]
 
 type banner =
@@ -114,6 +114,7 @@ type governor_eco_mode =
 
 type techsource =
   | Techsource_research | Techsource_spy | Techsource_found | Techsource_AI_spy | Techsource_trade
+  (* Techsource_choose = Techsource_AI_spy *)
 
 let techsource_choose = Techsource_AI_spy
 

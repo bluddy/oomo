@@ -345,11 +345,12 @@ let get_best_comp g player tech =
   ~init:Comp_none
 
 (* Extract utility of available techs
+ * mutates etos
  * TODO: externalize, similar to shiptech
  *)
 let update_tech_util g =
   let open Techtypes in
-  iter_perplayer (fun player _ ->
+  iter_perplayer (fun player perplayer ->
     update_eto g player (fun eto ->
       let rc_plan = get_research_completed eto Tech_field_planetology in
       let check_plan tech = TechSet.mem (plan_to_tech tech) rc_plan in
@@ -481,6 +482,9 @@ let update_tech_util g =
         if check_plan Plan_bio_toxin_antidote then 1 else
         0
       in
+      let scanner_range =
+        if perplayer.gaux.flag_cheat_galaxy then 30 else scanner_range
+      in
       { eto with
         have_colony_for; have_adv_soil_enrich; have_atmos_terra; have_soil_enrich;
         inc_pop_cost; have_terraform_n; terraform_cost_per_inc; have_combat_transporter;
@@ -492,5 +496,32 @@ let update_tech_util g =
     )
   )
 
+let get_name gaux field tech =
+  if Tech.(tech = none) then
+    Game_str.get_te_field field
+  else
+    "" (* TODO: get research text from lbx *)
+
+let get_newtech_msg g player newtech =
+  let race = (get_eto g player).race in
+  let sp = Printf.sprintf in
+  let open Game_str in
+  match newtech.source with
+  | Techsource_research ->
+      sp "%s %s %s %s" (get_race race) nt_achieve (get_te_field newtech.field) nt_break
+  | Techsource_spy ->
+      sp "%s %s %s" (get_race race) nt_infil g.planet.(newtech.v06).name
+  | Techsource_found ->
+      (* TODO: Make this more clearer *)
+      if newtech.v06 = newtech_v06_orion then nt_orion
+      else if newtech.v06 >= 0 then
+        sp "%s %s %s" nt_ruins g.planet.(newtech.v06).name nt_discover
+      else
+        sp "%s %s %S" nt_scouts g.planet.(-(newtech.v06 + 1)).name nt_discover
+  | Techsource_AI_spy -> nt_choose
+     (* This is labeled as Techsource_choose. reused? *)
+  | Techsource_trade ->
+      let target_race = (get_eto g @@ Player.of_int newtech.v06).race in
+      sp "%s %s %s %s" (get_race target_race) nt_reveal (get_te_field newtech.field) nt_secrets
 
 

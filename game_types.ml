@@ -206,7 +206,7 @@ type newtech = {
   field: tech_field;
   tech: Tech.t;
   source: techsource;
-  v06: int;
+  v06: int;   (* multi-use. Planet index, race index *)
   stolen_from: Player.t;
   frame: bool;
   other1: Player.t;

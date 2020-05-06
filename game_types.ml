@@ -163,7 +163,16 @@ type empire_tech_orbit = {
 }
 
 let get_techdata eto field = eto.tech.(tech_field_to_enum field)
+let iter_techdata eto f =
+  Array.iteri (fun i x ->
+    f (tech_field_of_enum i |> Option.get_exn) x)
+  eto.tech
 let get_techslider eto field = eto.tech_sliders.(tech_field_to_enum field)
+let update_techslider eto field f =
+  let i = tech_field_to_enum field in
+  eto.tech_sliders.(i) <- f (eto.tech_sliders.(i))
+let add_techslider eto field i =
+  update_techslider eto field (fun slider -> {slider with value = slider.value + i})
 
 let update_techdata eto field f =
   let tech = eto.tech in
@@ -397,7 +406,7 @@ let get_eto g player = g.perplayer.(Player.to_int player).eto
 let update_eto g player f =
   let pp = g.perplayer.(Player.to_int player) in
   pp.eto <- f (pp.eto)
-  
+
 let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)
 let get_t_perplayer g player = g.perplayer.(Player.to_int player)
 let is_ai g player = (get_t_perplayer g player).is_ai

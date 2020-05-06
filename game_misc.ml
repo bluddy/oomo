@@ -4,7 +4,7 @@ open Game_types
 open Shiptech
 
 (*
-let game_update_have_reserve_fuel g =
+let update_have_reserve_fuel g =
   Array.iter (fun perplayer ->
     let num = perplayer.eto.shipdesigns_num in
     Array.iteri (fun i sr ->
@@ -35,6 +35,7 @@ let adjust_slider_group slider_arr slider_idx value =
   in
   let value = min value left in
   slider_arr.(slider_idx) <- {slider_arr.(slider_idx) with value};
+
   (* Reduce some unlocked slider to left *)
   let left = left - value in
   let left, update_data =
@@ -54,8 +55,7 @@ let adjust_slider_group slider_arr slider_idx value =
       slider_arr.(i) <- {slider_arr.(i) with value}
   | _ -> ()
   end;
-  (* If we never found a place to use left,
-   * dump it in an unlocked slider *)
+  (* If we never found a place to use left, dump it in an unlocked slider *)
   match first_unlocked with
   | Some first_unlocked when left > 0 ->
       let j =

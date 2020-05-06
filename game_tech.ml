@@ -530,11 +530,11 @@ let current_research_common eto field f =
   let cost, invest = td.cost, td.investment in
   if cost = 0 || slider = 0 then 0
   else
-    let t1 = invest * 3 / 20 in
+    let max_bonus = invest * 3 / 20 in
     (* percent invested *)
-    let t3 = slider * eto.total_research_bc / 100 in
-    let t1 = if t3 * 2 < t1 then t3 * 2 else t1 in
-    let invest = invest + t3 + t1 in
+    let to_add = slider * eto.total_research_bc / 100 in
+    let bonus = min (to_add * 2) max_bonus in
+    let invest = invest + to_add + bonus in
     f invest cost
 
 let current_research_percent1 eto field =
@@ -555,10 +555,10 @@ let current_research_has_max_bonus eto field =
   let cost, invest = td.cost, td.investment in
   if cost = 0 || slider = 0 then false
   else
-    let t1 = invest * 3 / 20 in
+    let max_bonus = invest * 3 / 20 in
     (* percent invested *)
-    let t3 = slider * eto.total_research_bc / 100 in
-    t1 <= t3 * 2 && t3 > 0
+    let to_add = slider * eto.total_research_bc / 100 in
+    (max_bonus <= to_add * 2) && to_add > 0
 
 let current_research_time_score eto field =
   let td = get_techdata eto field in
@@ -575,20 +575,54 @@ let current_research_time_score eto field =
   in
   s * td.cost
 
-  (*
+(* mutates tech_sliders *)
+(* keep adjusting until it stabilizes, giving us max_bonus *)
 let set_to_max_bonus eto field =
   let had_bonus = current_research_has_max_bonus eto field in
-  let techdata = get_techdata eto field in
-  let rec adjust () =
-    let v = t.slider in
-    let prev = v in
-    let v = if had_bonus then v - 1 else v + 1 in
-    techdata.slider <- v;
-    adjust_slider_group techdata.slider field v t.slider_lock;
-    let has_bonus = current_research_has_max_bonux e field in
-    if has_bonus <> had_bonus || v = prev then ()
-    else adjust ()
-    *)
+  let rec adjust prev =
+    let v = if had_bonus then prev - 1 else prev + 1
+      |> set_range 0 100
+    in
+    (* eto.tech_slider <- v; BUG: seems unnecessary *)
+    Game_misc.adjust_slider_group eto.tech_sliders (tech_field_to_enum field) v;
+    let has_bonus = current_research_has_max_bonus eto field in
+    let v = (get_techslider eto field).value in
+    if Bool.equal has_bonus had_bonus && v <> prev then adjust v
+    else ()
+  in
+  adjust (get_techslider eto field).value
+
+let set_to_min eto =
+  (* Set all sliders to 0 or 1 *)
+  iter_techdata eto (fun i td ->
+    let value = if td.investment > 0 then 1 else 0 in
+    update_techslider eto i (fun s -> {s with value}));
+  let distribute_s check_pct1 s old_s =
+    (* @check_pct1: disallow exceeding 100%? *)
+    let rec loop s old_s =
+      (* wait for stabilization or 0 *)
+      if s > 0 && s < old_s then begin
+        let old_s = s in
+        let rs = ref s in
+        iter_techdata eto (fun i _ ->
+          (* Check if we maxed out *)
+          if current_research_has_max_bonus eto i ||
+            (check_pct1 && current_research_percent1 eto i > 100) then ()
+          else begin
+            add_techslider eto i 1;
+            decr rs;
+          end);
+        loop !rs old_s
+      end else s
+      in
+      loop s old_s
+  in
+  (* feed old_s as 100 just to get one iteration *)
+  let s = distribute_s true (100-tech_field_num) 100 in
+  let _ = distribute_s false s 100 in
+  add_techslider eto tech_field_last s
+  
+
 
 
 

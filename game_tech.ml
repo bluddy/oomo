@@ -239,7 +239,7 @@ let get_new g player field tech source a8 stolen_from frame =
 let tech_share g field accepted from_dead =
   (* Search for players to take techs from *)
   let tech_sources =
-    fold_perplayer (fun acc player pp ->
+    fold_perplayer g (fun acc player pp ->
       if Bool.equal pp.refuse accepted && (from_dead || pp.alive) then
         (* We can take from this race *)
         let rc = get_research_completed pp.eto field in
@@ -249,11 +249,10 @@ let tech_share g field accepted from_dead =
       else
         acc
     )
-    g
     ~init:TechMap.empty
   in
   (* Add collected techs to other races *)
-  iter_perplayer (fun player pp ->
+  iter_perplayer g (fun player pp ->
     if Bool.equal pp.refuse accepted || not pp.alive then ()
     else
       if pp.is_ai then begin
@@ -348,7 +347,7 @@ let get_best_comp g player tech =
  *)
 let update_tech_util g =
   let open Techtypes in
-  iter_perplayer (fun player perplayer ->
+  iter_perplayer g (fun player perplayer ->
     update_eto g player (fun eto ->
       let rc_plan = get_research_completed eto Tech_field_planetology in
       let check_plan tech = TechSet.mem (plan_to_tech tech) rc_plan in
@@ -655,7 +654,10 @@ let finish_new g player =
       FieldSet.empty
       events_pp.newtechs
   in
-  ()
+  iter_perplayer g (fun player pp ->
+    ()
+
+  )
 
 
 

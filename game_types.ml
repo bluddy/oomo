@@ -396,8 +396,8 @@ type t = {
     events: events;
 }
 
-let fold_perplayer f g ~init = Array.foldi (fun acc i x -> f acc (Player.of_int i) x) init g.perplayer
-let iter_perplayer f g = Array.iteri (fun i x -> f (Player.of_int i) x) g.perplayer
+let fold_perplayer g f ~init = Array.foldi (fun acc i x -> f acc (Player.of_int i) x) init g.perplayer
+let iter_perplayer g f = Array.iteri (fun i x -> f (Player.of_int i) x) g.perplayer
 let get_eto g player = g.perplayer.(Player.to_int player).eto
 (* mutates eto *)
 let update_eto g player f =

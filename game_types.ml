@@ -234,18 +234,7 @@ type newtech = {
   other2: Player.t;
 }
 
-type nexttech = {
-  num: int;
-  tech: int list; (* TECH_NEXT_MAX *)
-}
-
 let newtech_v06_orion = planets_max
-
-type newtechs = {
-  num: int;
-  d: newtech list; (* newtech_max *)
-  next: nexttech array; (* tech_field_max *)
-}
 
 let game_event_tbl_num = 20
 let help_shown_num = 16
@@ -253,8 +242,9 @@ let help_shown_num = 16
 type events_perplayer = {
   home: int; (* planet index *)
   coup: bool;
-  mutable newtech: newtechs;
-  new_ships: int list; (* num_shipdesigns *)
+  newtechs: newtech Vector.vector; (* newtech_max (15) *)
+  nexttechs: Tech.t Vector.vector array; (* tech_field_num (6) * tech_next_max (12) *)
+  new_ships: int array; (* num_shipdesigns *)
   build_finished_num: int;
   gov_eco_mode: governor_eco_mode;
   gov_no_stargates: bool;
@@ -268,12 +258,12 @@ type events_perplayer = {
 }
 
 let get_nexttech events_pp field =
-  events_pp.newtech.next.(tech_field_to_enum field)
+  events_pp.nexttechs.(tech_field_to_enum field)
 
-let update_nexttech events_pp field f =
-  let next_arr = events_pp.newtech.next in
-  let field_i = tech_field_to_enum field in
-  next_arr.(field_i) <- f (next_arr.(field_i))
+let update_nexttechs events_pp field f =
+  let nts = events_pp.nexttechs in
+  let i = tech_field_to_enum field in
+  nts.(i) <- f @@ nts.(i)
 
 type events_pair = {
   spies_caught: int; (* catcher,spy *)

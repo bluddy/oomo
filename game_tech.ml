@@ -87,8 +87,7 @@ let get_base_cost_mod_jammer g player percent =
   (* mutates newtech *)
 let add_newtech g player field tech source a8 stolen_from frame =
   let ev_player = get_events_perplayer g player in
-  let num = ev_player.newtech.num in
-  if num < newtech_max then begin
+  if Vector.length ev_player.newtechs < newtech_max then begin
     let frame = match source with
       | Techsource_spy -> frame
       | _ -> false
@@ -108,8 +107,7 @@ let add_newtech g player field tech source a8 stolen_from frame =
     let add =
       {field; tech; source; v06=a8; stolen_from; other1; other2; frame}
     in
-    let n = ev_player.newtech in
-    ev_player.newtech <- {n with d = add::n.d; num = n.num + 1}
+    Vector.push ev_player.newtechs add
   end
 
 (* Find techs to add *)
@@ -193,7 +191,7 @@ let start_next g player field tech =
   let cost = get_next_rp g player field tech in
   update_techdata eto field (fun td -> {td with investment; project; cost});
   let events_pp = get_events_perplayer g player in
-  update_nexttech events_pp field (fun nt -> {nt with num = 0})
+  update_nexttechs events_pp field (fun _ -> Vector.create ())
 
 (* start_next: mutates techdata, nexttech *)
 let ai_tech_next g player field =
@@ -265,7 +263,7 @@ let tech_share g field accepted from_dead =
       end else begin
         TechMap.to_iter tech_sources
         |> Iter.take_while (fun _ ->
-            (get_events_perplayer g player).newtech.num < newtech_max)
+            Vector.length (get_events_perplayer g player).newtechs < newtech_max)
         |> Iter.iter (fun (tech, source_p) ->
           if not @@ player_has_tech g field tech player then
             (* BUG:? Odd conversion of source player to a8
@@ -642,6 +640,25 @@ let set_to_optimal eto =
     loop s
   end
     else ()
+
+let finish_new g player =
+  let eto = get_eto g player in
+  let can_choose = FieldSet.empty in
+  let events_pp = get_events_perplayer g player in
+  let can_choose =
+    Vector.fold (fun acc nt ->
+      let project = (get_techdata eto nt.field).project in
+      if Tech.(project = nt.tech) then
+        FieldSet.add nt.field acc
+      else
+        acc)
+      FieldSet.empty
+      events_pp.newtechs
+  in
+  ()
+
+
+
 
 
 

@@ -62,6 +62,12 @@ let tech_field_of_int x = tech_field_of_enum x |> Option.get_exn
 let tech_field_last = Tech_field_weapon
 let tech_field_num = 6
 
+module FieldSet = Set.Make(struct
+  type t = tech_field
+  let compare x y =
+    (tech_field_to_enum x) - (tech_field_to_enum y)
+  end)
+
 type race =
   | Human | Mrrshan | Silicoid
   | Sakkra | Psilon | Alkari

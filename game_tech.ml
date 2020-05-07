@@ -592,36 +592,57 @@ let set_to_max_bonus eto field =
   in
   adjust (get_techslider eto field).value
 
+(* distribute a value gradually among sliders *)
+let distribute_sliders eto check_pct1 s =
+  (* @check_pct1: disallow exceeding 100%? *)
+  let rec loop s old_s =
+    (* wait for stabilization or 0 *)
+    if s > 0 && s < old_s then begin
+      let old_s = s in
+      let rs = ref s in
+      iter_techdata eto (fun i _ ->
+        (* Check if we maxed out *)
+        if current_research_has_max_bonus eto i ||
+          (check_pct1 && current_research_percent1 eto i > 100) then ()
+        else begin
+          add_techslider eto i 1;
+          decr rs;
+        end);
+      loop !rs old_s
+    end else s
+    in
+    loop s 100
+
 let set_to_min eto =
   (* Set all sliders to 0 or 1 *)
   iter_techdata eto (fun i td ->
     let value = if td.investment > 0 then 1 else 0 in
     update_techslider eto i (fun s -> {s with value}));
-  let distribute_s check_pct1 s old_s =
-    (* @check_pct1: disallow exceeding 100%? *)
-    let rec loop s old_s =
-      (* wait for stabilization or 0 *)
-      if s > 0 && s < old_s then begin
-        let old_s = s in
-        let rs = ref s in
-        iter_techdata eto (fun i _ ->
-          (* Check if we maxed out *)
-          if current_research_has_max_bonus eto i ||
-            (check_pct1 && current_research_percent1 eto i > 100) then ()
-          else begin
-            add_techslider eto i 1;
-            decr rs;
-          end);
-        loop !rs old_s
-      end else s
-      in
-      loop s old_s
-  in
   (* feed old_s as 100 just to get one iteration *)
-  let s = distribute_s true (100-tech_field_num) 100 in
-  let _ = distribute_s false s 100 in
+  let s = distribute_sliders eto true (100-tech_field_num) in
+  (* continue to distribute to sliders, but allow to exceed 100% *)
+  let _ = distribute_sliders eto false s in
   add_techslider eto tech_field_last s
-  
+
+let set_to_optimal eto =
+  update_techsliders eto (fun i s -> {s with value=1});
+  let s = distribute_sliders eto true (100-tech_field_num) in
+  if s > 0 then begin
+    let timescores = map_techdata eto (fun i _ -> current_research_time_score eto i) in
+    (* distribute s to minimal sliders *)
+    let rec loop s =
+      if s <= 0 then begin
+        let min_i = array_min timescores in
+        let field = tech_field_of_int min_i in
+        add_techslider eto field 1;
+        timescores.(min_i) <- current_research_time_score eto field;
+        loop (s-1)
+      end else ()
+    in
+    loop s
+  end
+    else ()
+
 
 
 

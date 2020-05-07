@@ -167,12 +167,19 @@ let iter_techdata eto f =
   Array.iteri (fun i x ->
     f (tech_field_of_enum i |> Option.get_exn) x)
   eto.tech
+let fold_techdata eto f ~init = Array.foldi (fun acc i x ->
+    f acc (tech_field_of_enum i |> Option.get_exn) x) init eto.tech
+let map_techdata eto f = Array.mapi (fun i x ->
+    f (tech_field_of_enum i |> Option.get_exn) x) eto.tech
 let get_techslider eto field = eto.tech_sliders.(tech_field_to_enum field)
 let update_techslider eto field f =
   let i = tech_field_to_enum field in
   eto.tech_sliders.(i) <- f (eto.tech_sliders.(i))
 let add_techslider eto field i =
   update_techslider eto field (fun slider -> {slider with value = slider.value + i})
+let update_techsliders eto f =
+  iter_techdata eto (fun i _ ->
+    update_techslider eto i (fun s -> f i s))
 
 let update_techdata eto field f =
   let tech = eto.tech in

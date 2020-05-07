@@ -58,6 +58,7 @@ type tech_field =
   | Tech_field_planetology | Tech_field_propulsion | Tech_field_weapon
   [@@deriving enum]
 
+let tech_field_of_int x = tech_field_of_enum x |> Option.get_exn
 let tech_field_last = Tech_field_weapon
 let tech_field_num = 6
 

@@ -243,7 +243,7 @@ type events_perplayer = {
   home: int; (* planet index *)
   coup: bool;
   newtechs: newtech Vector.vector; (* newtech_max (15) *)
-  nexttechs: Tech.t Vector.vector array; (* tech_field_num (6) * tech_next_max (12) *)
+  nexttechs: Tech.t array array; (* tech_field_num (6) * tech_next_max (12) *)
   new_ships: int array; (* num_shipdesigns *)
   build_finished_num: int;
   gov_eco_mode: governor_eco_mode;

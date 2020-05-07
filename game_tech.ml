@@ -191,7 +191,7 @@ let start_next g player field tech =
   let cost = get_next_rp g player field tech in
   update_techdata eto field (fun td -> {td with investment; project; cost});
   let events_pp = get_events_perplayer g player in
-  update_nexttechs events_pp field (fun _ -> Vector.create ())
+  update_nexttechs events_pp field (fun _ -> Array.empty)
 
 (* start_next: mutates techdata, nexttech *)
 let ai_tech_next g player field =
@@ -645,17 +645,31 @@ let finish_new g player =
   let can_choose = FieldSet.empty in
   let events_pp = get_events_perplayer g player in
   let can_choose =
+    (* check newtech fields *)
     Vector.fold (fun acc nt ->
       let project = (get_techdata eto nt.field).project in
       if Tech.(project = nt.tech) then
         FieldSet.add nt.field acc
-      else
-        acc)
+      else acc)
       FieldSet.empty
       events_pp.newtechs
   in
-  iter_perplayer g (fun player pp ->
-    ()
+  let can_choose =
+    (* check project fields *)
+    fold_techdata eto (fun acc field td ->
+      if Tech.(td.project = none) && td.investment > 0 then
+        FieldSet.add field acc
+      else acc)
+      ~init:can_choose
+  in
+  iter_techdata eto (fun field td ->
+    let nexttech =
+      if FieldSet.mem field can_choose then
+        get_next_techs g player field
+      else
+        Array.empty
+    in
+    update_nexttechs events_pp field (fun _ -> nexttech)
 
   )
 

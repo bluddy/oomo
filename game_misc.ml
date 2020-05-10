@@ -3,20 +3,17 @@ open Types
 open Game_types
 open Shiptech
 
-(*
 let update_have_reserve_fuel g =
-  Array.iter (fun perplayer ->
-    let num = perplayer.eto.shipdesigns_num in
-    Array.iteri (fun i sr ->
-      let fuel =
-        i < num && Array.exists
-          (function Ship_special_reserve_fuel_tanks -> true | _ -> false)
+  iter_players g (fun player ->
+    let eto = get_eto g player in
+    Array.iter (fun sr ->
+      let fuel = List.exists
+          (function Special_reserve_fuel_tanks -> true | _ -> false)
           sr.design.special
-        in
-      sr.have_reserve_fuel <- fuel
-    ) perplayer.srd.pership;
-  ) g.perplayer
-*)
+      in
+      sr.have_reserve_fuel <- fuel)
+    eto.research_pership
+  )
 
 let adjust_slider_group slider_arr slider_idx value =
   (* Find how much we have left to play with *)
@@ -72,8 +69,8 @@ let adjust_slider_group slider_arr slider_idx value =
 
 
 
-  
-        
+
+
 
 
 

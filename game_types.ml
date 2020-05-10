@@ -100,7 +100,6 @@ type empire_tech_orbit_perplayer = {
   spies: int;
   spyreportfield: int; (* TECH_FIELD_NUM *)
   spyreportyear: int;
-  research_pership: ship_research_pership array; (* moved from srd *)
 }
 
 type empire_tech_orbit = {
@@ -155,6 +154,7 @@ type empire_tech_orbit = {
   orbit: fleet_orbit list; (* PLANETS_MAX *)
   shipi_colony: int;
   shipi_bomber: int;
+  research_pership: ship_research_pership array; (* moved from srd *)
 }
 
 let get_techdata eto field = eto.tech.(tech_field_to_enum field)

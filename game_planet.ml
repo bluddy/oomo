@@ -10,10 +10,15 @@ let tenths_to_str num =
   else
     s
 
-let increment_slider planet slider_i =
+let increment_slider planet slider =
   update_slider planet slider (fun s ->
-    add_slider ~lower:1 ~upper:100 s slider_i 1);
+    add_slider ~lower:1 ~upper:100 s 1);
   let v = (get_slider planet slider).value in
-  Game_misc.adjust_slider_group  planet.slider (planet_slider_to_enum slider_i) value
-     
+  Game_misc.adjust_slider_group  planet.sliders (planet_slider_to_enum slider) v
+
+let set_slider planet slider value =
+  update_slider planet slider (fun s -> {s with value});
+  Game_misc.adjust_slider_group  planet.sliders (planet_slider_to_enum slider) value
+
+
 

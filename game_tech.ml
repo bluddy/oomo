@@ -164,6 +164,7 @@ let get_next_techs g player field =
 
   | _ -> techs
 
+(* RP = research point *)
 let get_next_rp g player field tech =
   let tech_i = Tech.to_int tech in
   let cost = tech_i * tech_i in
@@ -341,7 +342,7 @@ let get_best_comp g player tech =
     then i else acc)
   ~init:Comp_none
 
-(* Extract utility of available techs
+(* Extract & update utility of available techs
  * mutates etos
  * TODO: externalize, similar to shiptech
  *)
@@ -521,17 +522,23 @@ let get_newtech_msg g player newtech =
       let target_race = (get_eto g @@ Player.of_int newtech.v06).race in
       sp "%s %s %s %s" (get_race target_race) nt_reveal (get_te_field newtech.field) nt_secrets
 
+let calc_research_investment invest slider total_research_bc =
+  let max_bonus = invest * 3 / 20 in
+  (* percent invested *)
+  let to_add = slider * total_research_bc / 100 in
+  let bonus = min (to_add * 2) max_bonus in
+  let invest = invest + to_add + bonus in
+  invest
+
 let current_research_common eto field f =
   let td = get_techdata eto field in
   let slider = (get_techslider eto field).value in
   let cost, invest = td.cost, td.investment in
   if cost = 0 || slider = 0 then 0
   else
-    let max_bonus = invest * 3 / 20 in
-    (* percent invested *)
-    let to_add = slider * eto.total_research_bc / 100 in
-    let bonus = min (to_add * 2) max_bonus in
-    let invest = invest + to_add + bonus in
+    let invest =
+      calc_research_investment invest slider eto.total_research_bc
+    in
     f invest cost
 
 let current_research_percent1 eto field =
@@ -580,7 +587,7 @@ let set_to_max_bonus eto field =
     let v = if had_bonus then prev - 1 else prev + 1
       |> set_range 0 100
     in
-    (* eto.tech_slider <- v; BUG: seems unnecessary *)
+    update_techslider eto field (fun s -> {s with value = v});
     Game_misc.adjust_slider_group eto.tech_sliders (tech_field_to_enum field) v;
     let has_bonus = current_research_has_max_bonus eto field in
     let v = (get_techslider eto field).value in
@@ -640,11 +647,11 @@ let set_to_optimal eto =
   end
     else ()
 
+(* Update nexttechs with fields we can choose from *)
 let finish_new g player =
   let eto = get_eto g player in
-  let can_choose = FieldSet.empty in
   let events_pp = get_events_perplayer g player in
-  let can_choose =
+  let choices =
     (* check newtech fields *)
     Vector.fold (fun acc nt ->
       let project = (get_techdata eto nt.field).project in
@@ -654,34 +661,96 @@ let finish_new g player =
       FieldSet.empty
       events_pp.newtechs
   in
-  let can_choose =
+  let choices =
     (* check project fields *)
     fold_techdata eto (fun acc field td ->
       if Tech.(td.project = none) && td.investment > 0 then
         FieldSet.add field acc
       else acc)
-      ~init:can_choose
+      ~init:choices
   in
   iter_techdata eto (fun field td ->
     let nexttech =
-      if FieldSet.mem field can_choose then
+      if FieldSet.mem field choices then
         get_next_techs g player field
       else
         Array.empty
     in
     update_nexttechs events_pp field (fun _ -> nexttech)
+    )
 
-  )
+let can_choose g player field =
+  let events_pp = get_events_perplayer g player in
+  let nexttech = get_nexttech events_pp field in
+  Array.length nexttech > 0
 
+(* get cost of tech *)
+let get_next_rp g player field tech =
+  let i = Tech.to_int tech in
+  let cost = i * i in (* TODO: make more resilient *)
+  let race = (get_eto g player).race in
+  let cost = cost * Num.get_tech_costmulr race field in
+  if is_ai g player then
+    let cost = cost * Ai.tech_cost g player in
+    cost / 100
+  else
+    let cost = cost * Num.get_tech_costmuld g.difficulty in
+    (cost / 1000) * 10
 
+let start_next g player field tech =
+  let eto = get_eto g player in
+  update_techdata eto field (fun td ->
+    let investment =
+      if Tech.(td.project = Tech.none) then td.investment else 0
+    in
+    let project = tech in
+    let cost = get_next_rp g player field tech in
+    {td with investment; project; cost});
+  let events_pp = get_events_perplayer g player in
+  update_nexttechs events_pp field (fun _ -> Array.empty)
 
+let get_field_top_tech g player field =
+  let eto = get_eto g player in
+  let rc = get_research_completed eto field in
+  TechSet.max_elt rc
 
+let get_field_percent g player field =
+  let eto = get_eto g player in
+  let rc = get_research_completed eto field in
+  let len = TechSet.cardinal rc in
+  let tmax = Tech.to_int @@ TechSet.max_elt rc in
+  let v = match len with
+    | 1 -> 1
+    | _ -> (tmax - 1) / 5 + 2
+  in
+  let v = tmax + len - v in
+  set_range v 1 99
 
-
-
-
-
-
-
-
-
+let research g =
+  iter_players g (fun (player:Player.t) ->
+    let eto = get_eto g player in
+    iter_fields (fun field ->
+      let td = get_techdata eto field in
+      let (slider:int) = (get_techslider eto field).value in
+      (* Calc how much we've invested *)
+      let investment = calc_research_investment td.investment slider eto.total_research_bc in
+      let percent = get_field_percent g player field in
+      update_techdata eto field (fun td -> {td with investment; percent});
+      (* So long as we're still investing (also, 1st tech has 0 cost *)
+      if td.cost <> 0 && slider <> 0 && eto.total_research_bc <> 0 then begin
+        (* If we've exceeded the cost *)
+        if td.cost < investment then
+          (* Chance of completing research *)
+          let chance = (investment - td.cost) * 250 / td.cost in
+          if random_1_n 500 g.seed <= chance then begin
+            get_new g player field td.project Techsource_research
+              (planet_get_random g player) Player.none false
+          end
+        else
+          if td.cost <> 0 then begin (* WASBUG? 1 RP for first tech rounded down to 0 *)
+            let investment = investment * 9 / 10 in (* why ? *)
+            update_techdata eto field (fun td -> {td with investment; percent})
+          end
+      end
+  ));
+  update_tech_util g

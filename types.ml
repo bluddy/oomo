@@ -139,3 +139,18 @@ let fleet_enroute_max = 260
 let transport_max = 100
 
 let planets_max = 108
+
+type slider = {
+  value: int;
+  locked: bool;
+}
+
+let add_slider ?lower ?upper slider i =
+  let value = slider.value + i in
+  let value = match lower, upper with
+    | Some l, Some u -> max l value |> min u
+    | _,      Some u -> min value u
+    | Some l, _      -> max value l
+    | _ -> value
+  in
+  {slider with value}

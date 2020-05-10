@@ -33,11 +33,6 @@ type fleet_orbit = {
   ships: int list; (* NUM_SHIPDESIGNS *)
 }
 
-type slider = {
-  value: int;
-  locked: bool;
-}
-
 type techdata = {
   percent: int; (* tech level % *)
   investment: int;
@@ -175,8 +170,9 @@ let get_techslider eto field = eto.tech_sliders.(tech_field_to_enum field)
 let update_techslider eto field f =
   let i = tech_field_to_enum field in
   eto.tech_sliders.(i) <- f (eto.tech_sliders.(i))
-let add_techslider eto field i =
-  update_techslider eto field (fun slider -> {slider with value = slider.value + i})
+let add_techslider ?lower ?upper eto field i =
+  update_techslider eto field (fun slider ->
+    add_slider ?lower ?upper slider i)
 let update_techsliders eto f =
   iter_techdata eto (fun i _ ->
     update_techslider eto i (fun s -> f i s))
@@ -263,7 +259,7 @@ let get_nexttech events_pp field =
 let update_nexttechs events_pp field f =
   let nts = events_pp.nexttechs in
   let i = tech_field_to_enum field in
-  nts.(i) <- f @@ nts.(i)
+  nts.(i) <- f (nts.(i))
 
 type events_pair = {
   spies_caught: int; (* catcher,spy *)
@@ -408,3 +404,11 @@ let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)
 let get_t_perplayer g player = g.perplayer.(Player.to_int player)
 let is_ai g player = (get_t_perplayer g player).is_ai
 let is_human g player = not @@ is_ai g player
+let iter_players g f =
+  for i=0 to g.players - 1 do
+    f (Player.of_int i)
+  done
+let iter_fields f =
+  for i=0 to tech_field_num - 1 do
+    f (tech_field_of_int i)
+  done

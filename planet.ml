@@ -1,3 +1,4 @@
+open Containers
 open Types
 
 type planet_type =
@@ -15,8 +16,9 @@ type special =
   | Artifacts | Rich | Ultra_rich
   | Tech4x
 
-type slider =
+type planet_slider =
   | Ship_slider | Def_slider | Ind_slider | Eco_slider | Tech_slider
+  [@@deriving enum]
 
 let slider_num = 5
 
@@ -71,8 +73,7 @@ type t = {
   factories: int;
   prod_after_maint: int;
   total_prod: int;
-  slider: int list; (* PLANET_SLIDER_NUM *)
-  slider_lock: bool list; (* PLANET_SLIDER_NUM *)
+  sliders: slider array; (* PLANET_SLIDER_NUM *)
   buildship: int; (* 0..Num_shipdesigns-1 or BUILDSHIP_STARGATE *)
   reloc: int; (* planet i to relocate produced ships or
                  planet's own index if no relocation *)
@@ -102,3 +103,12 @@ type t = {
   total_inbound: int list; (* PLAYER_NUM *)
   artifact_looter: Player.t;
 }
+
+let update_slider planet slider f =
+  let i = planet_slider_to_enum slider in
+  planet.sliders.(i) <- f planet.sliders.(i)
+
+let get_slider planet slider =
+  let i = planet_slider_to_enum slider in
+  planet.sliders.(i)
+

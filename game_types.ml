@@ -154,8 +154,11 @@ type empire_tech_orbit = {
   orbit: fleet_orbit list; (* PLANETS_MAX *)
   shipi_colony: int;
   shipi_bomber: int;
-  research_pership: ship_research_pership array; (* moved from srd *)
+  mutable research_pership: ship_research_pership array; (* moved from srd *)
 }
+
+let update_research_pership eto f =
+  eto.research_pership <- f eto.research_pership
 
 let get_techdata eto field = eto.tech.(tech_field_to_enum field)
 let iter_techdata eto f =

@@ -6,13 +6,14 @@ open Shiptech
 let update_have_reserve_fuel g =
   iter_players g (fun player ->
     let eto = get_eto g player in
-    Array.iter (fun sr ->
-      let fuel = List.exists
-          (function Special_reserve_fuel_tanks -> true | _ -> false)
-          sr.design.special
-      in
-      sr.have_reserve_fuel <- fuel)
-    eto.research_pership
+    update_research_pership eto (fun research_pership ->
+      Array.map (fun sr ->
+        let have_reserve_fuel = List.exists
+            (function Special_reserve_fuel_tanks -> true | _ -> false)
+            sr.design.special
+        in
+        {sr with have_reserve_fuel})
+      research_pership)
   )
 
 let adjust_slider_group slider_arr slider_idx value =

@@ -306,6 +306,9 @@ let get_base_cost g player =
   in
   if cost < 50 then 50 else cost
 
+let () =
+  Game_misc.get_base_cost := get_base_cost
+
 let get_base_weapon g player tech =
   Shiptech.fold_weapon (fun acc i weapon ->
       if Tech.(weapon.tech <= tech) &&
@@ -511,14 +514,14 @@ let get_newtech_msg g player newtech =
   | Techsource_research ->
       sp "%s %s %s %s" (get_race race) nt_achieve (get_te_field newtech.field) nt_break
   | Techsource_spy ->
-      sp "%s %s %s" (get_race race) nt_infil g.planet.(newtech.v06).name
+      sp "%s %s %s" (get_race race) nt_infil g.planets.(newtech.v06).name
   | Techsource_found ->
       (* TODO: Make this more clearer *)
       if newtech.v06 = newtech_v06_orion then nt_orion
       else if newtech.v06 >= 0 then
-        sp "%s %s %s" nt_ruins g.planet.(newtech.v06).name nt_discover
+        sp "%s %s %s" nt_ruins g.planets.(newtech.v06).name nt_discover
       else
-        sp "%s %s %S" nt_scouts g.planet.(-(newtech.v06 + 1)).name nt_discover
+        sp "%s %s %S" nt_scouts g.planets.(-(newtech.v06 + 1)).name nt_discover
   | Techsource_AI_spy -> nt_choose
      (* This is labeled as Techsource_choose. reused? *)
   | Techsource_trade ->
@@ -540,7 +543,7 @@ let current_research_common eto field f =
   if cost = 0 || slider = 0 then 0
   else
     let invest =
-      calc_research_investment invest slider eto.total_research_bc
+      calc_research_investment invest slider eto.costs.total_research_bc
     in
     f invest cost
 
@@ -564,7 +567,7 @@ let current_research_has_max_bonus eto field =
   else
     let max_bonus = invest * 3 / 20 in
     (* percent invested *)
-    let to_add = slider * eto.total_research_bc / 100 in
+    let to_add = slider * eto.costs.total_research_bc / 100 in
     (max_bonus <= to_add * 2) && to_add > 0
 
 let current_research_time_score eto field =
@@ -736,11 +739,11 @@ let research g =
       let td = get_techdata eto field in
       let (slider:int) = (get_techslider eto field).value in
       (* Calc how much we've invested *)
-      let investment = calc_research_investment td.investment slider eto.total_research_bc in
+      let investment = calc_research_investment td.investment slider eto.costs.total_research_bc in
       let percent = get_field_percent g player field in
       update_techdata eto field (fun td -> {td with investment; percent});
       (* So long as we're still investing (also, 1st tech has 0 cost *)
-      if td.cost <> 0 && slider <> 0 && eto.total_research_bc <> 0 then begin
+      if td.cost <> 0 && slider <> 0 && eto.costs.total_research_bc <> 0 then begin
         (* If we've exceeded the cost *)
         if td.cost < investment then
           (* Chance of completing research *)

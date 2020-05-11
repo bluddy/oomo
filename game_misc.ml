@@ -2,6 +2,11 @@ open Containers
 open Types
 open Game_types
 open Shiptech
+open Utils
+
+(* Forward declaration *)
+let get_base_cost =
+  ref (fun _ _ -> assert false : t -> Player.t -> int)
 
 let update_have_reserve_fuel g =
   iter_players g (fun player ->
@@ -65,7 +70,7 @@ let update_maint_costs g =
     let ship_maint_bc = total_cost + sg_cost |>
       min Num.num_max_ship_maint
     in
-    let bases_maint_bc = (missile_bases * Game_tech.get_base_cost g player) / 50 in
+    let bases_maint_bc = (missile_bases * !get_base_cost g player) / 50 in
 
     update_eto g player (fun eto ->
       let costs =

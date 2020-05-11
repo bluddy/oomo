@@ -287,6 +287,7 @@ let player_best_tech g field tech_base tech_step tech_max player =
     Tech.none
     iter_range
 
+(* Get the cost of a missile base, which is outfitted with the latest tech *)
 let get_base_cost g player =
   let eto = get_eto g player in
   let percent_of field = (get_techdata eto field).percent in
@@ -483,7 +484,7 @@ let update_tech_util g =
       let scanner_range =
         if perplayer.gaux.flag_cheat_galaxy then 30 else scanner_range
       in
-      { eto with
+      let tech_util = {
         have_colony_for; have_adv_soil_enrich; have_atmos_terra; have_soil_enrich;
         inc_pop_cost; have_terraform_n; terraform_cost_per_inc; have_combat_transporter;
         have_eco_restoration_n; scanner_range; have_stargates; have_hyperspace_comm;
@@ -491,6 +492,8 @@ let update_tech_util g =
         factory_adj_cost; ind_waste_scale; fuel_range; have_planet_shield;
         planet_shield_cost; have_engine; have_sub_space_int; antidote;
       }
+      in
+      {eto with tech_util}
     )
   )
 

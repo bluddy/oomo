@@ -15,7 +15,7 @@ type fleet_enroute = {
   speed: int;
   retreat: bool;
   visible: bool list; (* PLAYER_NUM *)
-  ships: int list; (* NUM_SHIPDESIGNS *)
+  ships: int array; (* NUM_SHIPDESIGNS *)
 }
 
 type transport = {
@@ -29,8 +29,8 @@ type transport = {
 }
 
 type fleet_orbit = {
-  visible: bool list; (* PLAYER_NUM *)
-  ships: int list; (* NUM_SHIPDESIGNS *)
+  visible: bool array; (* PLAYER_NUM *)
+  ships: int array; (* NUM_SHIPDESIGNS *)
 }
 
 type techdata = {
@@ -102,6 +102,44 @@ type empire_tech_orbit_perplayer = {
   spyreportyear: int;
 }
 
+type eto_tech_util = {
+  have_colony_for: Planet.planet_type;
+  have_adv_soil_enrich: bool;
+  have_atmos_terra: bool;
+  have_soil_enrich: bool;
+  inc_pop_cost: int; (* cost of adding 1 pop *)
+  have_terraform_n: int; (* 0,10,...120 *)
+  terraform_cost_per_inc: int; (* 5..2 *)
+  have_combat_transporter: bool;
+  have_eco_restoration_n: int; (* 2,3,5,10,20 *)
+  scanner_range: int; (* 3,5,7,9 *)
+  have_stargates: bool;
+  have_hyperspace_comm: bool;
+  have_ia_scanner: bool;
+  have_adv_scanner: bool;
+  colonist_oper_factories: int; (* 2.. *)
+  factory_cost: int; (* 10..2 *)
+  factory_adj_cost: int;
+  ind_waste_scale: int; (* 0, 2, ... 10 *)
+  fuel_range: int; (* 3..10, 30 *)
+  have_planet_shield: int; (* 0,5,10,15,20 *)
+  planet_shield_cost: int;
+  have_engine: int; (* 1.. *)
+  have_sub_space_int: bool;
+  antidote: int;
+}
+
+type eto_costs = {
+  total_trade_bc: int;
+  ship_maint_bc: int;
+  bases_maint_bc: int;
+  spying_maint_bc: int;
+  total_research_bc: int;
+  total_production_bc: int;
+  reserve_bc: int;
+  total_maint_bc: int;
+}
+
 type empire_tech_orbit = {
   race: race;
   banner: banner;
@@ -110,55 +148,27 @@ type empire_tech_orbit = {
   ai_p3_countdown: int;
   ai_p2_countdown: int;
   perplayer: empire_tech_orbit_perplayer array;
-  have_planet_shield: int; (* 0,5,10,15,20 *)
-  planet_shield_cost: int;
   security:int; (* tenths *)
-  total_trade_bc: int;
-  ship_maint_bc: int;
-  bases_maint_bc: int;
-  spying_maint_bc: int;
   percent_prod_total_to_actual: int;
-  total_maint_bc: int;
-  total_research_bc: int;
-  total_production_bc: int;
-  reserve_bc: int;
   tax: int;
   base_shield: Shiptech.shield;
   base_comp: Shiptech.comp;
   base_weapon: Shiptech.weapon;
-  have_sub_space_int: bool;
-  antidote: int;
-  have_colony_for: Planet.planet_type;
-  have_eco_restoration_n: int; (* 2,3,5,10,20 *)
-  have_terraform_n: int; (* 0,10,...120 *)
-  terraform_cost_per_inc: int; (* 5..2 *)
-  have_adv_soil_enrich: bool;
-  have_atmos_terra: bool;
-  have_soil_enrich: bool;
-  inc_pop_cost: int; (* cost of adding 1 pop *)
-  scanner_range: int; (* 3,5,7,9 *)
-  have_ia_scanner: bool;
-  have_adv_scanner: bool;
-  have_hyperspace_comm: bool;
-  have_stargates: bool;
-  colonist_oper_factories: int; (* 2.. *)
-  factory_cost: int; (* 10..2 *)
-  factory_adj_cost: int;
-  ind_waste_scale: int; (* 0, 2, ... 10 *)
-  fuel_range: int; (* 3..10, 30 *)
-  have_combat_transporter: bool;
   tech: techdata array; (* NUM_FIELDS *)
   tech_sliders: slider array; (* NUM_FIELDS *)
-  have_engine: int; (* 1.. *)
   shipdesigns_num: int;
-  orbit: fleet_orbit list; (* PLANETS_MAX *)
+  orbit: fleet_orbit array; (* PLANETS_MAX *)
   shipi_colony: int;
   shipi_bomber: int;
   mutable research_pership: ship_research_pership array; (* moved from srd *)
+  tech_util: eto_tech_util;
+  costs: eto_costs;
 }
 
 let update_research_pership eto f =
   eto.research_pership <- f eto.research_pership
+
+let fold_research_pership eto ~init f = Array.fold_left f init eto.research_pership
 
 let get_techdata eto field = eto.tech.(tech_field_to_enum field)
 let iter_techdata eto f =
@@ -389,8 +399,8 @@ type t = {
     election_held: bool;
     nebula_num: int; (* 0..4 *)
     nebula_info: nebula_info array; (* NEBULA_MAX *)
-    planet: Planet.t array; (* planets_max *)
-    enroute: fleet_enroute array; (* fleet_enroute_max *)
+    planets: Planet.t array; (* planets_max *)
+    enroute: fleet_enroute array; (* fleet_enroute_max: ships moving *)
     transport: transport array; (* transport_max *)
     events: events;
 }

@@ -16,6 +16,64 @@ let update_have_reserve_fuel g =
       research_pership)
   )
 
+let update_maint_costs g =
+  iter_players g (fun player ->
+    let eto = get_eto g player in
+    let ship_tbl = Array.make num_shipdesigns 0 in
+
+    (* count all orbiting ships of each type *)
+    Array.iter (fun planet_orbit ->
+      Array.iteri (fun i num_ships ->
+        ship_tbl.(i) <- ship_tbl.(i) + num_ships
+      ) planet_orbit.ships)
+    eto.orbit;
+
+    (* add all enroute ships of this player *)
+    Array.iter (fun (fleet:fleet_enroute) ->
+      if Player.(fleet.owner = player) then begin
+        Array.iteri (fun i n_ships -> ship_tbl.(i) <- ship_tbl.(i) + n_ships)
+          fleet.ships
+      end)
+      g.enroute;
+
+    (* Mutate shipcounts *)
+    update_research_pership eto (fun rp_arr ->
+      Array.map2 (fun rp shipcount -> {rp with shipcount})
+        rp_arr ship_tbl);
+
+    (* Compute total ship cost *)
+    let total_cost =
+      fold_research_pership eto ~init:0 (fun acc rp ->
+        acc + rp.shipcount * rp.design.cost)
+    in
+    let total_cost = total_cost / 50
+      |> min Num.num_max_ship_maint
+    in
+    let missile_bases, stargates =
+      Array.fold_left (fun ((bases, sgates) as acc) (planet:Planet.t) ->
+        if Player.(planet.owner = player) then
+          let sgates =
+            if planet.have_stargate then sgates + 1 else sgates
+          in
+          let bases = bases + planet.missile_bases in
+          bases, sgates
+        else acc)
+      (0, 0)
+      g.planets
+    in
+    let sg_cost = stargates * Num.num_stargate_maint in
+    let ship_maint_bc = total_cost + sg_cost |>
+      min Num.num_max_ship_maint
+    in
+    let bases_maint_bc = (missile_bases * Game_tech.get_base_cost g player) / 50 in
+
+    update_eto g player (fun eto ->
+      let costs =
+        {eto.costs with ship_maint_bc; bases_maint_bc}
+      in
+      {eto with costs})
+  )
+
 let adjust_slider_group slider_arr slider_idx value =
   (* Find how much we have left to play with *)
   let left, first_unlocked, last_unlocked =

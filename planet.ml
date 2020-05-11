@@ -52,14 +52,14 @@ type t = {
   look: int; (* 0-6 *)
   frame: int; (* 0-49 *)
   rocks: rocks;
+  growth: growth;
+  special: special;
+  ptype: planet_type;
   max_pop1: int; (* base size *)
   max_pop2: int; (* size adjusted by soil enrichment tech *)
   max_pop3: int; (* max pop *)
-  ptype: planet_type;
   battlebg: int; (* 0-4; 0: nebula *)
   infogfx: int; (* index to planets.lbx *)
-  growth: growth;
-  special: special;
   bc_to_ecoproj: int;
   bc_to_ship: int;
   bc_to_factory: int;
@@ -71,8 +71,8 @@ type t = {
   pop: int;
   pop_prev: int;
   factories: int;
-  prod_after_maint: int;
-  total_prod: int;
+  mutable prod_after_maint: int;
+  mutable total_prod: int;
   sliders: slider array; (* PLANET_SLIDER_NUM *)
   buildship: int; (* 0..Num_shipdesigns-1 or BUILDSHIP_STARGATE *)
   reloc: int; (* planet i to relocate produced ships or

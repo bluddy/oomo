@@ -20,6 +20,8 @@ module Player : IntType_t = struct
   let (=) = eq
 end
 
+module PlayerMap = Map.Make(Player)
+
 module type TechType_t = sig
   type t
   val to_int: t -> int

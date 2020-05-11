@@ -67,7 +67,6 @@ let get_base_cost_mod_comp g comp_tech percent =
   let hull_data = Shiptech.get_comp_hull comp Hull_large in
   (hull_data.cost * mult) / 1000 + hull_data.power / 10
 
-
 let get_best_jammer g player tech =
   let open Shiptech in
   fold_jammer (fun acc i jammer ->
@@ -353,152 +352,151 @@ let get_best_comp g player tech =
 let update_tech_util g =
   let open Techtypes in
   iter_perplayer g (fun player perplayer ->
-    update_eto g player (fun eto ->
-      let rc_plan = get_research_completed eto Tech_field_planetology in
-      let check_plan tech = TechSet.mem (plan_to_tech tech) rc_plan in
-      let have_colony_for =
-        if check_plan Plan_controlled_radiated_env then Planet.Radiated else
-        if check_plan Plan_controlled_toxic_env then Planet.Toxic else
-        if check_plan Plan_controlled_inferno_env then Planet.Inferno else
-        if check_plan Plan_controlled_dead_env then Planet.Dead else
-        if check_plan Plan_controlled_tundra_env then Planet.Tundra else
-        if check_plan Plan_controlled_barren_env then Planet.Barren else
-        Planet.Minimal
-      in
-      let have_colony_for = match eto.race with
-        | Silicoid -> Planet.Radiated | _ -> have_colony_for in
-      let check_plan_not_silicoid x =
-        check_plan x && (match eto.race with Silicoid -> false | _ -> true) in
-      let have_adv_soil_enrich = check_plan_not_silicoid Plan_advanced_soil_enrichment in
-      let have_atmos_terra = check_plan_not_silicoid Plan_atmospheric_terraforming in
-      let have_soil_enrich = check_plan_not_silicoid Plan_soil_enrichment in
-      let inc_pop_cost =
-        if check_plan Plan_advanced_cloning then 5
-        else if check_plan Plan_cloning then 10
-        else 20
-      in
-      let inc_pop_cost = match eto.race with Sakkra -> inc_pop_cost * 2 / 3 | _ -> inc_pop_cost in
-      let have_terraform_n, terraform_cost_per_inc =
-        if check_plan Plan_complete_terraforming then 120, 2 else
-        if check_plan Plan_improved_terraforming_100 then 100, 2 else
-        if check_plan Plan_improved_terraforming_80 then 80, 2 else
-        if check_plan Plan_improved_terraforming_60 then 60, 3 else
-        if check_plan Plan_improved_terraforming_50 then 50, 3 else
-        if check_plan Plan_improved_terraforming_40 then 40, 4 else
-        if check_plan Plan_improved_terraforming_30 then 30, 4 else
-        if check_plan Plan_improved_terraforming_20 then 20, 5 else
-        if check_plan Plan_improved_terraforming_10 then 10, 5 else
-        0, 5
-      in
-      let rc_prop = get_research_completed eto Tech_field_propulsion in
-      let check_prop tech = TechSet.mem (prop_to_tech tech) rc_prop in
-      let have_combat_transporter = check_prop Prop_combat_transporters in
-      let have_eco_restoration_n =
-        if check_plan Plan_complete_eco_restoration then 20 else
-        if check_plan Plan_advanced_eco_restoration then 10 else
-        if check_plan Plan_enhanced_eco_restoration then 5 else
-        if check_plan Plan_improved_eco_restoration then 3 else
-        2
-      in
-      let rc_comp = get_research_completed eto Tech_field_computer in
-      let check_comp tech = TechSet.mem (comp_to_tech tech) rc_comp in
-      let scanner_range =
-        if check_comp Comp_advanced_space_scanner then 9 else
-        if check_comp Comp_improved_space_scanner then 7 else
-        if check_comp Comp_deep_space_scanner then 5 else
-        3
-      in
-      let have_stargates = check_prop Prop_intergalactic_star_gates in
-      let have_hyperspace_comm = check_comp Comp_hyperspace_communications in
-      let have_ia_scanner =
-        check_comp Comp_improved_space_scanner || check_comp Comp_advanced_space_scanner in
-      let have_adv_scanner =
-        check_comp Comp_advanced_space_scanner in
-      let b =
-        if check_comp Comp_improved_robotic_controls_vii then 7 else
-        if check_comp Comp_improved_robotic_controls_vi then 6 else
-        if check_comp Comp_improved_robotic_controls_v then 5 else
-        if check_comp Comp_improved_robotic_controls_iv then 4 else
-        if check_comp Comp_improved_robotic_controls_iii then 3 else
-        2
-      in
-      let colonist_oper_factories = match eto.race with Meklar -> b + 2 | _ -> b in
-      let rc_cons = get_research_completed eto Tech_field_construction in
-      let check_cons tech = TechSet.mem (cons_to_tech tech) rc_cons in
-      let b =
-        if check_cons Cons_improved_industrial_tech_2 then 2 else
-        if check_cons Cons_improved_industrial_tech_3 then 3 else
-        if check_cons Cons_improved_industrial_tech_4 then 4 else
-        if check_cons Cons_improved_industrial_tech_5 then 5 else
-        if check_cons Cons_improved_industrial_tech_6 then 6 else
-        if check_cons Cons_improved_industrial_tech_7 then 7 else
-        if check_cons Cons_improved_industrial_tech_8 then 8 else
-        if check_cons Cons_improved_industrial_tech_9 then 9 else
-        10
-      in
-      let factory_cost = b in
-      let factory_adj_cost = match eto.race with Meklar -> b | _ -> b * colonist_oper_factories / 2 in
-      let ind_waste_scale =
-        if check_cons Cons_industrial_waste_elimination then 0 else
-        if check_cons Cons_reduced_industrial_waste_20 then 2 else
-        if check_cons Cons_reduced_industrial_waste_40 then 4 else
-        if check_cons Cons_reduced_industrial_waste_60 then 6 else
-        if check_cons Cons_reduced_industrial_waste_80 then 8 else
-        10
-      in
-      let fuel_range =
-        if check_prop Prop_thorium_cells then 30 else
-        if check_prop Prop_trilithium_crystals then 10 else
-        if check_prop Prop_reajax_ii_fuel_cells then 9 else
-        if check_prop Prop_uridium_fuel_cells then 8 else
-        if check_prop Prop_dotomite_crystals then 7 else
-        if check_prop Prop_uridium_fuel_cells then 6 else
-        if check_prop Prop_deuterium_fuel_cells then 5 else
-        if check_prop Prop_hydrogen_fuel_cells then 4 else
-        3
-      in
-      let have_planet_shield =
-        let rc_ffld = get_research_completed eto Tech_field_force_field in
-        let check_ffld tech = TechSet.mem (ffld_to_tech tech) rc_ffld in
-        if check_ffld Ffld_class_xx_planetary_shield then 20 else
-        if check_ffld Ffld_class_xv_planetary_shield then 15 else
-        if check_ffld Ffld_class_x_planetary_shield then 10 else
-        if check_ffld Ffld_class_v_planetary_shield then 5 else
-        0
-      in
-      let planet_shield_cost = Num.num_pshield_cost.(have_planet_shield / 5) in
-      let have_engine =
-        if check_prop Prop_hyper_drives then 8 else
-        if check_prop Prop_inter_phased_drives then 7 else
-        if check_prop Prop_anti_matter_drives then 6 else
-        if check_prop Prop_ion_drives then 5 else
-        if check_prop Prop_impulse_drives then 4 else
-        if check_prop Prop_fusion_drives then 3 else
-        if check_prop Prop_sub_light_drives then 2 else
-        if check_prop Prop_nuclear_engines then 1 else
-        1
-      in
-      let have_sub_space_int = check_prop Prop_sub_space_interdictor in
-      let antidote =
-        if check_plan Plan_universal_antidote then 2 else
-        if check_plan Plan_bio_toxin_antidote then 1 else
-        0
-      in
-      let scanner_range =
-        if perplayer.gaux.flag_cheat_galaxy then 30 else scanner_range
-      in
-      let tech_util = {
-        have_colony_for; have_adv_soil_enrich; have_atmos_terra; have_soil_enrich;
-        inc_pop_cost; have_terraform_n; terraform_cost_per_inc; have_combat_transporter;
-        have_eco_restoration_n; scanner_range; have_stargates; have_hyperspace_comm;
-        have_ia_scanner; have_adv_scanner; colonist_oper_factories; factory_cost;
-        factory_adj_cost; ind_waste_scale; fuel_range; have_planet_shield;
-        planet_shield_cost; have_engine; have_sub_space_int; antidote;
-      }
-      in
-      {eto with tech_util}
+    let eto = get_eto g player in
+    let rc_plan = get_research_completed eto Tech_field_planetology in
+    let check_plan tech = TechSet.mem (plan_to_tech tech) rc_plan in
+    let have_colony_for =
+      if check_plan Plan_controlled_radiated_env then Planet.Radiated else
+      if check_plan Plan_controlled_toxic_env then Planet.Toxic else
+      if check_plan Plan_controlled_inferno_env then Planet.Inferno else
+      if check_plan Plan_controlled_dead_env then Planet.Dead else
+      if check_plan Plan_controlled_tundra_env then Planet.Tundra else
+      if check_plan Plan_controlled_barren_env then Planet.Barren else
+      Planet.Minimal
+    in
+    let have_colony_for = match eto.race with
+      | Silicoid -> Planet.Radiated | _ -> have_colony_for in
+    let check_plan_not_silicoid x =
+      check_plan x && (match eto.race with Silicoid -> false | _ -> true) in
+    let have_adv_soil_enrich = check_plan_not_silicoid Plan_advanced_soil_enrichment in
+    let have_atmos_terra = check_plan_not_silicoid Plan_atmospheric_terraforming in
+    let have_soil_enrich = check_plan_not_silicoid Plan_soil_enrichment in
+    let inc_pop_cost =
+      if check_plan Plan_advanced_cloning then 5
+      else if check_plan Plan_cloning then 10
+      else 20
+    in
+    let inc_pop_cost = match eto.race with Sakkra -> inc_pop_cost * 2 / 3 | _ -> inc_pop_cost in
+    let have_terraform_n, terraform_cost_per_inc =
+      if check_plan Plan_complete_terraforming then 120, 2 else
+      if check_plan Plan_improved_terraforming_100 then 100, 2 else
+      if check_plan Plan_improved_terraforming_80 then 80, 2 else
+      if check_plan Plan_improved_terraforming_60 then 60, 3 else
+      if check_plan Plan_improved_terraforming_50 then 50, 3 else
+      if check_plan Plan_improved_terraforming_40 then 40, 4 else
+      if check_plan Plan_improved_terraforming_30 then 30, 4 else
+      if check_plan Plan_improved_terraforming_20 then 20, 5 else
+      if check_plan Plan_improved_terraforming_10 then 10, 5 else
+      0, 5
+    in
+    let rc_prop = get_research_completed eto Tech_field_propulsion in
+    let check_prop tech = TechSet.mem (prop_to_tech tech) rc_prop in
+    let have_combat_transporter = check_prop Prop_combat_transporters in
+    let have_eco_restoration_n =
+      if check_plan Plan_complete_eco_restoration then 20 else
+      if check_plan Plan_advanced_eco_restoration then 10 else
+      if check_plan Plan_enhanced_eco_restoration then 5 else
+      if check_plan Plan_improved_eco_restoration then 3 else
+      2
+    in
+    let rc_comp = get_research_completed eto Tech_field_computer in
+    let check_comp tech = TechSet.mem (comp_to_tech tech) rc_comp in
+    let scanner_range =
+      if check_comp Comp_advanced_space_scanner then 9 else
+      if check_comp Comp_improved_space_scanner then 7 else
+      if check_comp Comp_deep_space_scanner then 5 else
+      3
+    in
+    let have_stargates = check_prop Prop_intergalactic_star_gates in
+    let have_hyperspace_comm = check_comp Comp_hyperspace_communications in
+    let have_ia_scanner =
+      check_comp Comp_improved_space_scanner || check_comp Comp_advanced_space_scanner in
+    let have_adv_scanner =
+      check_comp Comp_advanced_space_scanner in
+    let b =
+      if check_comp Comp_improved_robotic_controls_vii then 7 else
+      if check_comp Comp_improved_robotic_controls_vi then 6 else
+      if check_comp Comp_improved_robotic_controls_v then 5 else
+      if check_comp Comp_improved_robotic_controls_iv then 4 else
+      if check_comp Comp_improved_robotic_controls_iii then 3 else
+      2
+    in
+    let colonist_oper_factories = match eto.race with Meklar -> b + 2 | _ -> b in
+    let rc_cons = get_research_completed eto Tech_field_construction in
+    let check_cons tech = TechSet.mem (cons_to_tech tech) rc_cons in
+    let b =
+      if check_cons Cons_improved_industrial_tech_2 then 2 else
+      if check_cons Cons_improved_industrial_tech_3 then 3 else
+      if check_cons Cons_improved_industrial_tech_4 then 4 else
+      if check_cons Cons_improved_industrial_tech_5 then 5 else
+      if check_cons Cons_improved_industrial_tech_6 then 6 else
+      if check_cons Cons_improved_industrial_tech_7 then 7 else
+      if check_cons Cons_improved_industrial_tech_8 then 8 else
+      if check_cons Cons_improved_industrial_tech_9 then 9 else
+      10
+    in
+    let factory_cost = b in
+    let factory_adj_cost = match eto.race with Meklar -> b | _ -> b * colonist_oper_factories / 2 in
+    let ind_waste_scale =
+      if check_cons Cons_industrial_waste_elimination then 0 else
+      if check_cons Cons_reduced_industrial_waste_20 then 2 else
+      if check_cons Cons_reduced_industrial_waste_40 then 4 else
+      if check_cons Cons_reduced_industrial_waste_60 then 6 else
+      if check_cons Cons_reduced_industrial_waste_80 then 8 else
+      10
+    in
+    let fuel_range =
+      if check_prop Prop_thorium_cells then 30 else
+      if check_prop Prop_trilithium_crystals then 10 else
+      if check_prop Prop_reajax_ii_fuel_cells then 9 else
+      if check_prop Prop_uridium_fuel_cells then 8 else
+      if check_prop Prop_dotomite_crystals then 7 else
+      if check_prop Prop_uridium_fuel_cells then 6 else
+      if check_prop Prop_deuterium_fuel_cells then 5 else
+      if check_prop Prop_hydrogen_fuel_cells then 4 else
+      3
+    in
+    let have_planet_shield =
+      let rc_ffld = get_research_completed eto Tech_field_force_field in
+      let check_ffld tech = TechSet.mem (ffld_to_tech tech) rc_ffld in
+      if check_ffld Ffld_class_xx_planetary_shield then 20 else
+      if check_ffld Ffld_class_xv_planetary_shield then 15 else
+      if check_ffld Ffld_class_x_planetary_shield then 10 else
+      if check_ffld Ffld_class_v_planetary_shield then 5 else
+      0
+    in
+    let planet_shield_cost = Num.num_pshield_cost.(have_planet_shield / 5) in
+    let have_engine =
+      if check_prop Prop_hyper_drives then 8 else
+      if check_prop Prop_inter_phased_drives then 7 else
+      if check_prop Prop_anti_matter_drives then 6 else
+      if check_prop Prop_ion_drives then 5 else
+      if check_prop Prop_impulse_drives then 4 else
+      if check_prop Prop_fusion_drives then 3 else
+      if check_prop Prop_sub_light_drives then 2 else
+      if check_prop Prop_nuclear_engines then 1 else
+      1
+    in
+    let have_sub_space_int = check_prop Prop_sub_space_interdictor in
+    let antidote =
+      if check_plan Plan_universal_antidote then 2 else
+      if check_plan Plan_bio_toxin_antidote then 1 else
+      0
+    in
+    let scanner_range =
+      if perplayer.gaux.flag_cheat_galaxy then 30 else scanner_range
+    in
+    let techu = {
+      have_colony_for; have_adv_soil_enrich; have_atmos_terra; have_soil_enrich;
+      inc_pop_cost; have_terraform_n; terraform_cost_per_inc; have_combat_transporter;
+      have_eco_restoration_n; scanner_range; have_stargates; have_hyperspace_comm;
+      have_ia_scanner; have_adv_scanner; colonist_oper_factories; factory_cost;
+      factory_adj_cost; ind_waste_scale; fuel_range; have_planet_shield;
+      planet_shield_cost; have_engine; have_sub_space_int; antidote;
+    }
+    in
+    eto.techu <- techu
     )
-  )
 
 let get_name gaux field tech =
   if Tech.(tech = none) then
@@ -543,7 +541,7 @@ let current_research_common eto field f =
   if cost = 0 || slider = 0 then 0
   else
     let invest =
-      calc_research_investment invest slider eto.costs.total_research_bc
+      calc_research_investment invest slider eto.money.total_research_bc
     in
     f invest cost
 
@@ -567,7 +565,7 @@ let current_research_has_max_bonus eto field =
   else
     let max_bonus = invest * 3 / 20 in
     (* percent invested *)
-    let to_add = slider * eto.costs.total_research_bc / 100 in
+    let to_add = slider * eto.money.total_research_bc / 100 in
     (max_bonus <= to_add * 2) && to_add > 0
 
 let current_research_time_score eto field =
@@ -739,11 +737,11 @@ let research g =
       let td = get_techdata eto field in
       let (slider:int) = (get_techslider eto field).value in
       (* Calc how much we've invested *)
-      let investment = calc_research_investment td.investment slider eto.costs.total_research_bc in
+      let investment = calc_research_investment td.investment slider eto.money.total_research_bc in
       let percent = get_field_percent g player field in
       update_techdata eto field (fun td -> {td with investment; percent});
       (* So long as we're still investing (also, 1st tech has 0 cost *)
-      if td.cost <> 0 && slider <> 0 && eto.costs.total_research_bc <> 0 then begin
+      if td.cost <> 0 && slider <> 0 && eto.money.total_research_bc <> 0 then begin
         (* If we've exceeded the cost *)
         if td.cost < investment then
           (* Chance of completing research *)

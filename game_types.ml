@@ -53,7 +53,7 @@ type ship_research_pership = {
   shipcount: int;
 }
 
-type empire_tech_orbit_perplayer = {
+type eto_other_player = {
   contact: bool;
   contact_broken: bool;
   relation1: int;
@@ -79,8 +79,8 @@ type empire_tech_orbit_perplayer = {
   au_want_field: tech_field;
   au_want_tech: int;
   au_tech_trade_num: int;
-  au_tech_trade_field: tech_field list; (* TECH_SPY_MAX *)
-  au_tech_trade_tech: int list; (* TECH_SPY_MAX *)
+  au_tech_trade_field: tech_field array; (* TECH_SPY_MAX *)
+  au_tech_trade_tech: int array; (* TECH_SPY_MAX *)
   offer_field: tech_field;
   offer_tech: int;
   offer_bc: int;
@@ -102,6 +102,7 @@ type empire_tech_orbit_perplayer = {
   spyreportyear: int;
 }
 
+(* Data derived from techs *)
 type eto_tech_util = {
   have_colony_for: Planet.planet_type;
   have_adv_soil_enrich: bool;
@@ -129,7 +130,7 @@ type eto_tech_util = {
   antidote: int;
 }
 
-type eto_costs = {
+type eto_money = {
   total_trade_bc: int;
   ship_maint_bc: int;
   bases_maint_bc: int;
@@ -138,6 +139,7 @@ type eto_costs = {
   total_production_bc: int;
   reserve_bc: int;
   total_maint_bc: int;
+  percent_prod_total_to_actual: int;
 }
 
 type empire_tech_orbit = {
@@ -147,9 +149,8 @@ type empire_tech_orbit = {
   trait2: trait2;
   ai_p3_countdown: int;
   ai_p2_countdown: int;
-  perplayer: empire_tech_orbit_perplayer array;
+  others: eto_other_player array;
   security:int; (* tenths *)
-  percent_prod_total_to_actual: int;
   tax: int;
   base_shield: Shiptech.shield;
   base_comp: Shiptech.comp;
@@ -161,8 +162,8 @@ type empire_tech_orbit = {
   shipi_colony: int;
   shipi_bomber: int;
   mutable research_pership: ship_research_pership array; (* moved from srd *)
-  tech_util: eto_tech_util;
-  costs: eto_costs;
+  mutable techu: eto_tech_util;
+  mutable money: eto_money;
 }
 
 let update_research_pership eto f =
@@ -188,7 +189,7 @@ let add_techslider ?lower ?upper eto field i =
     add_slider ?lower ?upper slider i)
 let update_techsliders eto f =
   iter_techdata eto (fun i _ ->
-    update_techslider eto i (fun s -> f i s))
+    update_techslider eto i (fun slider -> f i slider))
 
 let update_techdata eto field f =
   let tech = eto.tech in
@@ -215,7 +216,7 @@ let get_eto_contact_idxs eto =
       if x.contact then (i+1, (Player.of_int i)::acc)
       else (i+1, acc))
     (0, [])
-    eto.perplayer
+    eto.others
     |> snd
 
 let get_techdata eto field = eto.tech.(tech_field_to_enum field)
@@ -408,10 +409,6 @@ type t = {
 let fold_perplayer g f ~init = Array.foldi (fun acc i x -> f acc (Player.of_int i) x) init g.perplayer
 let iter_perplayer g f = Array.iteri (fun i x -> f (Player.of_int i) x) g.perplayer
 let get_eto g player = g.perplayer.(Player.to_int player).eto
-(* mutates eto *)
-let update_eto g player f =
-  let pp = g.perplayer.(Player.to_int player) in
-  pp.eto <- f (pp.eto)
 
 let get_events_perplayer g player = g.events.perplayer.(Player.to_int player)
 let get_t_perplayer g player = g.perplayer.(Player.to_int player)
@@ -425,3 +422,5 @@ let iter_fields f =
   for i=0 to tech_field_num - 1 do
     f (tech_field_of_int i)
   done
+let iter_planets g f = Array.iter f g.planets
+

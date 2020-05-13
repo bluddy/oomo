@@ -8,6 +8,7 @@ module type IntType_t = sig
   val compare: t -> t -> int
   val eq: t -> t -> bool
   val (=): t -> t -> bool
+  val (<>): t -> t -> bool
 end
 
 module Player : IntType_t = struct
@@ -18,6 +19,7 @@ module Player : IntType_t = struct
   let compare x y = (to_int x) - (to_int y)
   let eq x y = to_int x = to_int y
   let (=) = eq
+  let (<>) x y = not @@ eq x y
 end
 
 module PlayerMap = Map.Make(Player)
@@ -105,7 +107,7 @@ type game_event =
   | Event_none | Event_plague | Event_quake
   | Event_nova | Event_accident | Event_assassin
   | Event_virus | Event_comet | Event_pirates
-  | Event_derelic | Event_rebellion | Event_crystal
+  | Event_derelict | Event_rebellion | Event_crystal
   | Event_amoeba | Event_enviro | Event_rich
   | Event_support | Event_poor
 

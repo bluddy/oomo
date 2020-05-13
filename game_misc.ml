@@ -79,7 +79,7 @@ let update_production g =
   update_maint_costs g;
 
   (* Calculate per-planet production *)
-  let update_planet_total_prod (p:Planet.t) =
+  let update_planet_total_prod _ (p:Planet.t) =
     if Player.(p.owner = none) then ()
     else begin
       let eto = get_eto g p.owner in
@@ -87,7 +87,7 @@ let update_production g =
       let popx, rebels =
         (* Check if we transferred. See send_transport *)
         if p.trans_num > 0 then
-          (p.pop - p.trans_num |> max 1, 
+          (p.pop - p.trans_num |> max 1,
             p.rebels - (p.trans_num / 2 + 1) |> max 0)
         else
           p.pop, p.rebels
@@ -105,7 +105,7 @@ let update_production g =
       in
       let v = factories + extra in
       (* AI is given a chance to cheat with production *)
-      let v = 
+      let v =
         if is_ai g p.owner then Ai.production_boost g p.owner v
         else v
       in
@@ -123,7 +123,7 @@ let update_production g =
 
   (* Calculate total production per player *)
   let total_prod = Array.make g.players 0 in
-  let calc_total_prod_perplayer (p:Planet.t) =
+  let calc_total_prod_perplayer _ (p:Planet.t) =
     let i = Player.to_int p.owner in
     total_prod.(i) <- total_prod.(i) + p.total_prod
   in
@@ -133,9 +133,9 @@ let update_production g =
   let update_player_production player =
     let eto = get_eto g player in
     let m = eto.money in
-    let total_production_bc = total_prod.(Player.to_int player) in
+    let total_prod = total_prod.(Player.to_int player) in
     let spysum = Array.fold_left (fun acc x -> acc + x.spying) 0 eto.others in
-    let spying_maint_bc = total_production_bc * spysum / 1000 in
+    let spying_maint_bc = total_prod * spysum / 1000 in
     let bonus = match eto.race with Human -> 25 | _ -> 0 in
     let total_trade_bc =
       Array.fold_left (fun acc x ->
@@ -143,22 +143,22 @@ let update_production g =
       0 eto.others
     in
     let actual_prod =
-      (total_production_bc * (1000 - eto.security - spysum)) / 1000
+      (total_prod * (1000 - eto.security - spysum)) / 1000
       + m.total_trade_bc - m.ship_maint_bc - m.bases_maint_bc
-      - (total_production_bc * eto.tax) / 1000
+      - (total_prod * eto.tax) / 1000
       |> max 1
     in
-    let total_maint_bc = total_production_bc - actual_prod in
+    let total_maint_bc = total_prod - actual_prod in
     let percent_prod_total_to_actual =
-      if total_production_bc > 0 then actual_prod * 100 / total_production_bc else 0
+      if total_prod > 0 then actual_prod * 100 / total_prod else 0
     in
     eto.money <- {eto.money with
-          total_production_bc; spying_maint_bc; total_trade_bc;
+          total_production_bc=total_prod; spying_maint_bc; total_trade_bc;
           total_maint_bc; percent_prod_total_to_actual; }
     in
     iter_players g update_player_production;
 
-    let update_planet_prod_after_maint (p:Planet.t) =
+    let update_planet_prod_after_maint _ (p:Planet.t) =
       let eto = get_eto g p.owner in
       let prod_after_maint =
         p.total_prod * eto.money.percent_prod_total_to_actual / 100
@@ -167,7 +167,37 @@ let update_production g =
       p.prod_after_maint <- prod_after_maint
     in
     iter_planets g update_planet_prod_after_maint
-      
+
+let get_tech_prod prod slider race special =
+  let open Planet in
+  let v = prod * slider.value / 100 in
+  let v = match race with Psilon -> v + (v/2) | _ -> v in
+  let v = match special with
+    | Artifacts -> v * 2
+    | Tech4x -> v * 4
+    | _ -> v
+  in
+  min v 0x7fff
+
+let update_total_research g =
+  let has_research g p =
+    match g.events.plague, g.events.nova with
+      | _, Some (_, planet, _, _) when Planet.Idx.(planet = p) -> false
+      | Some (_, planet, _, _), _ when Planet.Idx.(planet = p) -> false
+      | _ -> true
+  in
+  let open Planet in
+  iter_planets g (fun i p ->
+    if Player.(p.owner <> none) &&
+       has_research g i then begin
+         let eto = get_eto g p.owner in
+         let new_r = get_tech_prod p.prod_after_maint
+           (get_slider p Tech_slider) eto.race p.special
+         in
+         eto.money.total_research_bc <- eto.money.total_research_bc + new_r
+       end
+  )
+
 
 let adjust_slider_group slider_arr slider_idx value =
   (* Find how much we have left to play with *)

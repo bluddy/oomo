@@ -135,7 +135,7 @@ type eto_money = {
   ship_maint_bc: int;
   bases_maint_bc: int;
   spying_maint_bc: int;
-  total_research_bc: int;
+  mutable total_research_bc: int;
   total_production_bc: int;
   reserve_bc: int;
   total_maint_bc: int;
@@ -252,6 +252,7 @@ let help_shown_num = 16
 type events_perplayer = {
   home: int; (* planet index *)
   coup: bool;
+  newtech_num: int;
   newtechs: newtech Vector.vector; (* newtech_max (15) *)
   nexttechs: Tech.t array array; (* tech_field_num (6) * tech_next_max (12) *)
   new_ships: int array; (* num_shipdesigns *)
@@ -288,54 +289,29 @@ type events_pair = {
   ceasefire: Player.t; (* human, ai *)
 }
 
+type comet = { have: int; years: int; hp: int; dmg: int; }
+
 type events = {
   perplayer: events_perplayer array;
   perpair: events_pair array array;
   year: int;
   gdone: bool list; (* game_event_tbl_num *)
   diplo_msg_subtype: int; (* -1..13 *)
-  have_plague: int; (* 0..3 *)
-  plague_player: Player.t;
-  plague_planet_i: int;
-  plague_val: int;
-  have_quake: bool;
-  quake_player: Player.t;
-  quake_planet_i: int;
-  have_nova: int; (* 0..3 *)
-  nova_player: Player.t;
-  nova_planet_i: int;
-  nova_years: int;
-  nova_val: int;
-  have_accident: int; (* 0..2 *)
-  accident_player: Player.t;
-  accident_planet_i: int;
-  have_assassin: bool;
-  assassin_player: Player.t;
-  assassin_player2: Player.t;
-  have_virus: bool;
-  virus_player: Player.t;
-  virus_field: tech_field;
-  have_comet: int; (* 0..3 *)
-  comet_player: Player.t;
-  comet_planet_i: int;
-  comet_years: int;
-  comet_hp: int;
-  comet_dmg: int;
-  have_pirates: int; (* 0..3 *)
-  pirates_planet_i: int;
-  pirates_hp: int;
-  have_derelict: bool;
-  derelict_player: Player.t;
-  crystal: monster;
-  amoeba: monster;
-  have_enviro: bool;
-  enviro_planet_i: int;
-  have_rich: bool;
-  rich_planet_i: int;
-  have_support: bool;
-  support_player: Player.t;
-  have_poor: bool;
-  poor_planet_i: int;
+  plague: (Player.t * Planet.Idx.t * int * int) option; (* have: 0..3, val: int *)
+  quake: (Player.t * Planet.Idx.t) option;
+  nova: (Player.t * Planet.Idx.t * int * int) option; (* years, val *)
+  accident: (Player.t * Planet.Idx.t * int) option; (* 0.. 2 *)
+  assassin: (Player.t * Player.t) option;
+  virus: (Player.t * tech_field) option;
+  comet: (Player.t * Planet.Idx.t * comet) option; (* have, years, hp, dmg *)
+  pirates: (Planet.t * int * int) option; (* 0..3, hp *)
+  derelict: Player.t option;
+  crystal: monster option;
+  amoeba: monster option;
+  enviro: Planet.Idx.t option;
+  rich: Planet.Idx.t option;
+  support: Player.t option;
+  poor: Planet.Idx.t option;
   have_orion_conquer: int; (* 0, pi+1 *)
   planet_orion_i: int;
   have_guardian: bool;
@@ -422,5 +398,7 @@ let iter_fields f =
   for i=0 to tech_field_num - 1 do
     f (tech_field_of_int i)
   done
-let iter_planets g f = Array.iter f g.planets
+let iter_planets g f = Array.iteri
+  (fun i planet -> f (Planet.Idx.of_int i) planet)
+  g.planets
 

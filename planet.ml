@@ -112,3 +112,21 @@ let get_slider planet slider =
   let i = planet_slider_to_enum slider in
   planet.sliders.(i)
 
+module type IntType_t = sig
+  type t
+  val to_int: t -> int
+  val of_int: int -> t
+  val compare: t -> t -> int
+  val eq: t -> t -> bool
+  val (=): t -> t -> bool
+end
+
+module Idx : IntType_t = struct
+  type t = int
+  let to_int x : int = x
+  let of_int x : t = x
+  let compare x y = (to_int x) - (to_int y)
+  let eq x y = to_int x = to_int y
+  let (=) = eq
+  let (<>) x y = not @@ eq x y
+end

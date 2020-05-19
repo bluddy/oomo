@@ -73,7 +73,7 @@ type t = {
   factories: int;
   mutable prod_after_maint: int;
   mutable total_prod: int;
-  sliders: slider array; (* PLANET_SLIDER_NUM *)
+  sliders: sliders; (* PLANET_SLIDER_NUM *)
   buildship: int; (* 0..Num_shipdesigns-1 or BUILDSHIP_STARGATE *)
   reloc: int; (* planet i to relocate produced ships or
                  planet's own index if no relocation *)
@@ -106,11 +106,14 @@ type t = {
 
 let update_slider planet slider f =
   let i = planet_slider_to_enum slider in
-  planet.sliders.(i) <- f planet.sliders.(i)
+  let v = planet.sliders.v.(i) in
+  planet.sliders.v.(i) <- f v
 
 let get_slider planet slider =
   let i = planet_slider_to_enum slider in
-  planet.sliders.(i)
+  planet.sliders.v.(i)
+
+let planet_slider_of_int i = planet_slider_of_enum i |> Option.get_exn
 
 module type IntType_t = sig
   type t

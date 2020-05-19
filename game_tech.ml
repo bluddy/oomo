@@ -536,7 +536,7 @@ let calc_research_investment invest slider total_research_bc =
 
 let current_research_common eto field f =
   let td = get_techdata eto field in
-  let slider = (get_techslider eto field).value in
+  let slider = get_techslider eto field in
   let cost, invest = td.cost, td.investment in
   if cost = 0 || slider = 0 then 0
   else
@@ -559,7 +559,7 @@ let current_research_percent2 eto field =
 
 let current_research_has_max_bonus eto field =
   let td = get_techdata eto field in
-  let slider = (get_techslider eto field).value in
+  let slider = get_techslider eto field in
   let cost, invest = td.cost, td.investment in
   if cost = 0 || slider = 0 then false
   else
@@ -591,14 +591,14 @@ let set_to_max_bonus eto field =
     let v = if had_bonus then prev - 1 else prev + 1
       |> set_range 0 100
     in
-    update_techslider eto field (fun s -> {s with value = v});
+    update_techslider eto field (fun _ -> v);
     Game_misc.adjust_slider_group eto.tech_sliders (tech_field_to_enum field) v;
     let has_bonus = current_research_has_max_bonus eto field in
-    let v = (get_techslider eto field).value in
+    let v = get_techslider eto field in
     if Bool.equal has_bonus had_bonus && v <> prev then adjust v
     else ()
   in
-  adjust (get_techslider eto field).value
+  adjust (get_techslider eto field)
 
 (* distribute a value gradually among sliders *)
 let distribute_sliders eto check_pct1 s =
@@ -625,7 +625,7 @@ let set_to_min eto =
   (* Set all sliders to 0 or 1 *)
   iter_techdata eto (fun i td ->
     let value = if td.investment > 0 then 1 else 0 in
-    update_techslider eto i (fun s -> {s with value}));
+    update_techslider eto i (fun _ -> value));
   (* feed old_s as 100 just to get one iteration *)
   let s = distribute_sliders eto true (100-tech_field_num) in
   (* continue to distribute to sliders, but allow to exceed 100% *)
@@ -633,7 +633,7 @@ let set_to_min eto =
   add_techslider eto tech_field_last s
 
 let set_to_optimal eto =
-  update_techsliders eto (fun i s -> {s with value=1});
+  update_techsliders eto (fun _ _ -> 1);
   let s = distribute_sliders eto true (100-tech_field_num) in
   if s > 0 then begin
     let timescores = map_techdata eto (fun i _ -> current_research_time_score eto i) in
@@ -735,7 +735,7 @@ let research g =
     let eto = get_eto g player in
     iter_fields (fun field ->
       let td = get_techdata eto field in
-      let (slider:int) = (get_techslider eto field).value in
+      let slider = get_techslider eto field in
       (* Calc how much we've invested *)
       let investment = calc_research_investment td.investment slider eto.money.total_research_bc in
       let percent = get_field_percent g player field in

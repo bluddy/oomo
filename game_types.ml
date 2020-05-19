@@ -142,6 +142,7 @@ type eto_money = {
   percent_prod_total_to_actual: int;
 }
 
+
 type empire_tech_orbit = {
   race: race;
   banner: banner;
@@ -156,7 +157,7 @@ type empire_tech_orbit = {
   base_comp: Shiptech.comp;
   base_weapon: Shiptech.weapon;
   tech: techdata array; (* NUM_FIELDS *)
-  tech_sliders: slider array; (* NUM_FIELDS *)
+  tech_sliders: sliders; (* NUM_FIELDS *)
   shipdesigns_num: int;
   orbit: fleet_orbit array; (* PLANETS_MAX *)
   shipi_colony: int;
@@ -180,10 +181,11 @@ let fold_techdata eto f ~init = Array.foldi (fun acc i x ->
     f acc (tech_field_of_enum i |> Option.get_exn) x) init eto.tech
 let map_techdata eto f = Array.mapi (fun i x ->
     f (tech_field_of_enum i |> Option.get_exn) x) eto.tech
-let get_techslider eto field = eto.tech_sliders.(tech_field_to_enum field)
+let get_techslider eto field = eto.tech_sliders.v.(tech_field_to_enum field)
 let update_techslider eto field f =
   let i = tech_field_to_enum field in
-  eto.tech_sliders.(i) <- f (eto.tech_sliders.(i))
+  let v = eto.tech_sliders.v.(i) in
+  eto.tech_sliders.v.(i) <- f v
 let add_techslider ?lower ?upper eto field i =
   update_techslider eto field (fun slider ->
     add_slider ?lower ?upper slider i)

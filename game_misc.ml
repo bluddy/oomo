@@ -168,9 +168,9 @@ let update_production g =
     in
     iter_planets g update_planet_prod_after_maint
 
-let get_tech_prod prod slider race special =
+let get_tech_prod prod slider_v race special =
   let open Planet in
-  let v = prod * slider.value / 100 in
+  let v = prod * slider_v / 100 in
   let v = match race with Psilon -> v + (v/2) | _ -> v in
   let v = match special with
     | Artifacts -> v * 2
@@ -198,13 +198,76 @@ let update_total_research g =
        end
   )
 
+let update_eco_on_waste g player force_adjust =
+  (* Set the optimal slider point for eliminating waste
+   * force_adjust: even if not needed
+   *)
+  let eto = get_eto g player in
+  match eto.race with
+  | Silicoid -> ()
+  | _ ->
+      let open Planet in
+      iter_planets g (fun i p ->
+        if Player.(p.owner = player) then begin
+          (* Can only operate a certain number of factories *)
+          let fact = p.factories in
+          let v = eto.techu.colonist_oper_factories * p.pop in
+          let fact = min v fact in
 
-let adjust_slider_group slider_arr slider_idx value =
+          let waste = fact * eto.techu.ind_waste_scale / 10 in
+          let waste = (waste + p.waste) / eto.techu.have_eco_restoration_n in
+
+          let prod = p.prod_after_maint in
+          let prod = if prod <= 0 then 1000 else prod in
+          let v = (waste * 100 + prod - 1) / prod
+              |> set_range 0 100
+          in
+          (* Check if we should adjust slider *)
+          let s_eco_v = Planet.(get_slider p Eco_slider) in
+          let sliders =
+            if s_eco_v < v || force_adjust then begin
+              let sum = Array.fold_left (+) 0 p.sliders.v in
+              let left = sum - v |> max 0 in
+              let sum = sum - s_eco_v in
+              if sum > 0 then begin
+                let left2 =
+                  fold_update (fun i left2 slider ->
+                    match planet_slider_of_int i with
+                    | Eco_slider -> left2, slider
+                    | _ ->
+                        let t = slider * left / sum in
+                        left2 - t, t)
+                  ~init:left
+                  p.sliders.v
+                in
+                let max_i = array_max p.sliders.v in
+                Planet.update_slider p (planet_slider_of_int max_i) ((+) left2)
+              end
+            end
+          in
+          update_slider p Ship_slider (max 0);
+          update_slider p Def_slider (max 0);
+          update_slider p Ind_slider (max 0);
+          update_slider p Eco_slider (fun x -> set_range x 0 100);
+          let left = 100 -
+            get_slider p Ship_slider -
+            get_slider p Def_slider -
+            get_slider p Ind_slider -
+            get_slider p Eco_slider
+            |> max 0
+          in
+          update_slider p Tech_slider (fun _ -> left)
+        end
+      )
+
+
+
+let adjust_slider_group sliders slider_idx value =
   (* Find how much we have left to play with *)
   let left, first_unlocked, last_unlocked =
     Array.foldi (fun (left, first_unlocked, last_unlocked) i x ->
-      if x.locked then
-        (left - x.value, first_unlocked, last_unlocked)
+      if sliders.locks.(i) then
+        (left - x, first_unlocked, last_unlocked)
       else
         let first_unlocked = match first_unlocked with
           | None -> Some i
@@ -212,28 +275,27 @@ let adjust_slider_group slider_arr slider_idx value =
         in
         left, first_unlocked, i)
       (100, None, 0)
-      slider_arr
+      sliders.v
   in
   let value = min value left in
-  slider_arr.(slider_idx) <- {slider_arr.(slider_idx) with value};
+  sliders.v.(slider_idx) <- value;
 
   (* Reduce some unlocked slider to left *)
   let left = left - value in
   let left, update_data =
     Array.foldi (fun ((left, idx) as acc) i x ->
-      if i <> slider_idx && not x.locked then
-        if x.value <= left then
-          left - x.value, idx
+      if i <> slider_idx && not sliders.locks.(i) then
+        if x <= left then
+          left - x, idx
         else (* dump all thats left *)
           0, (Some (left, i))
       else
         acc)
       (left, None)
-      slider_arr
+      sliders.v
   in
   begin match update_data with
-  | Some (value, i) ->
-      slider_arr.(i) <- {slider_arr.(i) with value}
+  | Some (value, i) -> sliders.v.(i) <- value
   | _ -> ()
   end;
   (* If we never found a place to use left, dump it in an unlocked slider *)
@@ -243,8 +305,8 @@ let adjust_slider_group slider_arr slider_idx value =
         if slider_idx <> last_unlocked then last_unlocked
         else first_unlocked
       in
-      let value = slider_arr.(j).value + left in
-      slider_arr.(j) <- {slider_arr.(j) with value}
+      let value = sliders.v.(j) + left in
+      sliders.v.(j) <- value
   | _ -> ()
 
 

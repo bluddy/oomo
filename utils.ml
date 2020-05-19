@@ -16,7 +16,26 @@ let set_range x min max =
 
 let min x y = if x < y then x else y
 
-let array_min a = 
-  Array.foldi (fun min_i i x -> if x < a.(min_i) then i else min_i) 0 a
+let id_fn x = x
+
+let array_min ?(f=id_fn) a =
+  Array.foldi (fun min_i i x -> if f x < f a.(min_i) then i else min_i) 0 a
+
+let array_max ?(f=id_fn) a =
+  Array.foldi (fun max_i i x -> if f x > f a.(max_i) then i else max_i) 0 a
 
 exception Not_implemented
+
+(* fold over an array and update in place *)
+let fold_update f ~init arr =
+  let rec loop i acc =
+    if i >= Array.length arr then acc
+    else begin
+      let acc', v = f i acc arr.(i) in
+      arr.(i) <- v;
+      loop (i+1) acc'
+    end
+  in
+  loop 0 init
+
+  
